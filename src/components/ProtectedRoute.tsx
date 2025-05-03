@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
+  console.log("ProtectedRoute state:", { user, role, loading, allowedRoles });
   // Mientras se valida la sesión, no mostrar nada
   if (loading) return null;
   if (!user) {

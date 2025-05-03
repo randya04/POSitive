@@ -24,23 +24,24 @@ export function LoginForm({
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+    console.log("LoginForm.handleSubmit called", { email, password });
     try {
-      const { data, error } = await login(email, password);
-      if (error) {
-        toast.error("Email y/o contraseña no son válidos");
-        return;
-      }
+      await login(email, password);
+      console.log("LoginForm.handleSubmit: success branch");
       toast.success("Inicio de sesión exitoso");
-      const user = data.session?.user;
-      console.log('user', user);
-      const role = user?.user_metadata.role ?? user?.app_metadata.role;
-      console.log('role', role);
-      navigate(`/${role}`, { replace: true });
+      console.log("LoginForm.handleSubmit: after toast.success");
+      navigate("/dashboard", { replace: true });
+      console.log("LoginForm.handleSubmit: after navigate");
     } catch (err) {
-      console.error(err);
-      toast.error("Error del servicio, revisa la consola");
+      console.error("LoginForm.handleSubmit ERROR", err);
+      const msg = err instanceof Error ? err.message : "Email y/o contraseña no son válidos";
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -86,7 +87,7 @@ export function LoginForm({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="Ingresar correo electrónico"
                     required
                     value={email}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
@@ -110,7 +111,7 @@ export function LoginForm({
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full cursor-pointer">
+                <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
                   Login
                 </Button>
               </div>

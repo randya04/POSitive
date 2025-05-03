@@ -5,12 +5,16 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from '@/features/auth/login-form';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import SuperDashboard from '@/pages/super_admin';
-import AdminDashboard from '@/pages/restaurant_admin';
-import HostDashboard from '@/pages/host';
+import Dashboard from '@/pages/Dashboard';
 import Forbidden from '@/components/Forbidden';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function App() {
+  useEffect(() => {
+    console.log("App.tsx useEffect runs");
+  }, []);
+  console.log("App.tsx body runs");
   return (
     <AuthProvider>
       <Toaster position="top-right" />
@@ -18,26 +22,10 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginForm />} />
           <Route
-            path="/super_admin"
+            path="/dashboard"
             element={
-              <ProtectedRoute allowedRoles={["super_admin"]}>
-                <SuperDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/restaurant_admin"
-            element={
-              <ProtectedRoute allowedRoles={["restaurant_admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host"
-            element={
-              <ProtectedRoute allowedRoles={["host"]}>
-                <HostDashboard />
+              <ProtectedRoute allowedRoles={["super_admin","restaurant_admin","host"]}>
+                <Dashboard />
               </ProtectedRoute>
             }
           />
