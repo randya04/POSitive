@@ -8,7 +8,6 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import Forbidden from '@/components/Forbidden';
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
 
 export default function App() {
   useEffect(() => {

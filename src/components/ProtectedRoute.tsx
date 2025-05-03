@@ -9,13 +9,14 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
-  console.log("ProtectedRoute state:", { user, role, loading, allowedRoles });
-  // Mientras se valida la sesión, no mostrar nada
-  if (loading) return null;
+  // Mientras carga la sesión, renderizar children para que muestren su estado de carga
+  if (loading) return <>{children}</>;
+  // Si no hay usuario, redirige a login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (!role || !allowedRoles.includes(role)) {
+  // Si ya tenemos rol y no está permitido, redirige a forbidden
+  if (role !== null && !allowedRoles.includes(role)) {
     return <Navigate to="/forbidden" replace />;
   }
   return <>{children}</>;
