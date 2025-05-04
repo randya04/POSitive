@@ -5,14 +5,20 @@ module.exports = {
     './src/**/*.{js,jsx,ts,tsx}',
     './public/index.html'
   ],
+  safelist: [
+    'bg-primary',
+    'hover:bg-primary/90',
+    'text-primary-foreground',
+  ],
   theme: {
     extend: {
       colors: {
         primary: '#7E3AF2',
         'primary-foreground': '#ffffff',
+        foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Rubik', 'system-ui', 'ui-sans-serif', 'sans-serif'],
+        sans: ['Circular Std Book', 'system-ui', 'ui-sans-serif', 'sans-serif'],
       },
     },
   },

@@ -126,7 +126,7 @@ export default function Users() {
               className="max-w-sm"
             />
           </div>
-          <Button>Crear usuario</Button>
+          <Button variant="default">Crear usuario</Button>
         </div>
         {/* Table section */}
         <section className="bg-card border border-card rounded-xl overflow-hidden shadow-sm text-card-foreground">
@@ -135,7 +135,10 @@ export default function Users() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className={header.column.id === 'actions' ? 'text-right' : undefined}>
+                    <TableHead
+                      key={header.id}
+                      className={`${header.column.id === 'actions' ? 'text-right' : ''} text-xs font-normal`}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -182,7 +185,7 @@ export default function Users() {
               <div className="space-x-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                   aria-label="Anterior"
@@ -191,7 +194,7 @@ export default function Users() {
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
                   aria-label="Siguiente"
