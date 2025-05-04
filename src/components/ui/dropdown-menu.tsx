@@ -10,16 +10,16 @@ function DropdownMenu({
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
 
-const DropdownMenuPortal = React.forwardRef<
-  React.ElementRef<typeof DropdownMenuPrimitive.Portal>,
-  React.ComponentProps<typeof DropdownMenuPrimitive.Portal>
->(({ ...props }, ref) => (
-  <DropdownMenuPrimitive.Portal
-    ref={ref}
-    data-slot="dropdown-menu-portal"
-    {...props}
-  />
-))
+function DropdownMenuPortal(
+  props: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>
+) {
+  return (
+    <DropdownMenuPrimitive.Portal
+      data-slot="dropdown-menu-portal"
+      {...props}
+    />
+  )
+}
 DropdownMenuPortal.displayName = "DropdownMenuPortal"
 
 const DropdownMenuTrigger = React.forwardRef<

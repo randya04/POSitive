@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { VariantProps, cva } from "class-variance-authority"
+import { cva } from "class-variance-authority"
 import { PanelLeftIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -265,7 +265,7 @@ function SidebarTrigger({
       variant="ghost"
       size="icon"
       className={cn("size-7", className)}
-      onClick={(event) => {
+      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(event)
         toggleSidebar()
       }}
@@ -498,7 +498,9 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement,
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+    variant?: string
+    size?: string
+  }
 >(
   (
     { asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, ...props },
@@ -514,7 +516,7 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement,
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size }) as string, className)}
         {...props}
       />
     )
@@ -523,9 +525,10 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement,
       return button
     }
 
-    if (typeof tooltip === "string") {
-      tooltip = { children: tooltip }
-    }
+    const tooltipProps: React.ComponentProps<typeof TooltipContent> =
+      typeof tooltip === "string"
+        ? { children: tooltip }
+        : (tooltip as React.ComponentProps<typeof TooltipContent>)
 
     return (
       <Tooltip>
@@ -534,7 +537,7 @@ const SidebarMenuButton = React.forwardRef<HTMLButtonElement,
           side="right"
           align="center"
           hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
+          {...tooltipProps}
         />
       </Tooltip>
     )
