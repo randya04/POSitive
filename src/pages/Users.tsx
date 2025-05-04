@@ -1,8 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Layout } from '@/components/Layout'
+import {
+  createColumnHelper,
+  ColumnDef,
+  getCoreRowModel,
+  useReactTable,
+  flexRender,
+} from '@tanstack/react-table'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableCaption,
+} from '@/components/ui/table'
 
 interface User {
   id: string
@@ -41,6 +57,26 @@ export default function Users() {
     }
   }
 
+  const columnHelper = createColumnHelper<User>()
+  const columns: ColumnDef<User, any>[] = [
+    columnHelper.accessor('email', { header: 'Email' }),
+    columnHelper.accessor('role', { header: 'Rol' }),
+    {
+      id: 'actions',
+      header: 'Acciones',
+      cell: ({ row }) => (
+        <Button variant="destructive" onClick={() => handleDelete(row.original.id)}>
+          Eliminar
+        </Button>
+      ),
+    },
+  ]
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
   return (
     <Layout>
       <div className="p-4">
@@ -48,28 +84,38 @@ export default function Users() {
         {loading ? (
           <p>Cargando...</p>
         ) : (
-          <table className="w-full table-auto">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left">Email</th>
-                <th className="px-4 py-2 text-left">Rol</th>
-                <th className="px-4 py-2 text-left">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="border px-4 py-2">{u.email}</td>
-                  <td className="border px-4 py-2">{u.role}</td>
-                  <td className="border px-4 py-2">
-                    <Button variant="destructive" onClick={() => handleDelete(u.id)}>
-                      Eliminar
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="rounded-md border">
+            <Table>
+              <TableCaption>Listado de Usuarios</TableCaption>
+              <TableHeader>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map(row => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map(cell => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
     </Layout>
