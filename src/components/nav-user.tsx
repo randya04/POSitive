@@ -25,6 +25,14 @@ export function NavUser() {
   if (!user) return null;
 
   const displayName = fullName ?? (user.user_metadata as any)?.full_name ?? user.email;
+  // Compute initials: first letters of first two name parts
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((part: string) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
   const avatarUrl = (user.user_metadata as any)?.avatar_url;
   const secondaryLabel =
     role === "admin_restaurant" || role === "host"
@@ -48,7 +56,7 @@ export function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={avatarUrl} alt={displayName} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{displayName}</span>
@@ -67,7 +75,7 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{displayName}</span>
