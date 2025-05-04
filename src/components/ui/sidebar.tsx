@@ -127,23 +127,7 @@ function SidebarProvider({
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
-        <div
-          data-slot="sidebar-wrapper"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH,
-              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-              ...style,
-            } as React.CSSProperties
-          }
-          className={cn(
-            "group/sidebar-wrapper flex min-h-screen",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </div>
+        {children}
       </TooltipProvider>
     </SidebarContext.Provider>
   )

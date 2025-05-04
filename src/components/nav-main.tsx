@@ -20,7 +20,7 @@ export function NavMain() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Navegación</SidebarGroupLabel>
       <SidebarMenu>
         {allowedModules.map((item) => (
           <SidebarMenuItem key={item.path}>

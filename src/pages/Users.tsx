@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabaseClient'
 import { toast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Layout } from '@/components/Layout'
+import { PageContainer } from '@/components/PageContainer'
+import { Input } from '@/components/ui/input'
 import {
   createColumnHelper,
   ColumnDef,
@@ -22,9 +24,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  TableCaption,
 } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
 
 interface User {
   id: string
@@ -93,23 +93,26 @@ export default function Users() {
 
   return (
     <Layout>
-      <div className="p-4">
-        <h1 className="text-2xl font-semibold mb-4">Usuarios</h1>
-        {loading ? (
-          <p>Cargando...</p>
-        ) : (
-          <>
-            <div className="flex items-center py-4">
-              <Input
-                placeholder="Buscar email..."
-                value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-                onChange={(e) => table.getColumn('email')?.setFilterValue(e.target.value)}
-                className="max-w-sm"
-              />
+      <PageContainer>
+        {/* Title and search bar */}
+        <div className="mb-2">
+          <h1 className="text-lg font-semibold tracking-tight mb-2">Users</h1>
+          <Input
+            placeholder="Search email..."
+            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+            onChange={(e) => table.getColumn('email')?.setFilterValue(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+        {/* Table section */}
+        <section className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+          {loading ? (
+            <div className="p-8 text-center">
+              <p>Cargando...</p>
             </div>
-            <div className="rounded-md border">
+          ) : (
+            <>
               <Table>
-                <TableCaption>Listado de Usuarios</TableCaption>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -117,52 +120,50 @@ export default function Users() {
                         <TableHead key={header.id}>
                           {header.isPlaceholder
                             ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                            : flexRender(header.column.columnDef.header, header.getContext())}
                         </TableHead>
                       ))}
                     </TableRow>
                   ))}
                 </TableHeader>
                 <TableBody>
-                  {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                  {table.getRowModel().rows.length > 0 ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                        No hay resultados.
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
-            </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
+              {/* Pagination and info */}
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
+                <span>
+                  {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} seleccionados.
+                </span>
+                <div className="space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                    Anterior
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+      </PageContainer>
     </Layout>
   )
 }

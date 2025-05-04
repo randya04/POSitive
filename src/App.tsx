@@ -7,6 +7,7 @@ import { LoginForm } from '@/features/auth/login-form';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import Forbidden from '@/components/Forbidden';
+import Users from '@/pages/Users'; // Added import statement for Users page
 import { useEffect } from 'react';
 
 export default function App() {
@@ -20,6 +21,14 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginForm />} />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

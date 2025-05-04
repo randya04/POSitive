@@ -1,6 +1,7 @@
-import styles from './Dashboard.module.css';
 import { useAuth } from '@/hooks/useAuth';
 import { Layout } from '@/components/Layout';
+import { PageContainer } from '@/components/PageContainer'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
 export default function Dashboard() {
   const { role, loading } = useAuth();
@@ -27,14 +28,24 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <>
-          <h1 className={styles.title}>{title}</h1>
-          <p>{message}</p>
-        </>
-      )}
+      <PageContainer>
+        <Card>
+          {loading ? (
+            <div className="p-8 text-center">
+              <p>Cargando...</p>
+            </div>
+          ) : (
+            <>
+              <CardHeader>
+                <CardTitle>{title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>{message}</p>
+              </CardContent>
+            </>
+          )}
+        </Card>
+      </PageContainer>
     </Layout>
   );
 }
