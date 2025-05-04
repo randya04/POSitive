@@ -3,7 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { MobileMenu } from '@/components/ui/mobile-menu'
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider className="bg-gray-100">
       {/* Mobile menu (hamburger) */}
