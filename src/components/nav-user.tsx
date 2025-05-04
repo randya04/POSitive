@@ -18,13 +18,13 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "@/components/ui/toast"
 
 export function NavUser() {
-  const { user, role, restaurantName, logout } = useAuth();
+  const { user, role, restaurantName, fullName, logout } = useAuth();
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
 
   if (!user) return null;
 
-  const displayName = (user.user_metadata as any)?.full_name ?? user.email;
+  const displayName = fullName ?? (user.user_metadata as any)?.full_name ?? user.email;
   const avatarUrl = (user.user_metadata as any)?.avatar_url;
   const secondaryLabel =
     role === "admin_restaurant" || role === "host"

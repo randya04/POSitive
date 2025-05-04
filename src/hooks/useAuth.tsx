@@ -4,11 +4,12 @@ import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import type { User as SupaUser, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
-// Context holding the authenticated user, role, restaurant name, loading state, and auth methods
+// Context holding the authenticated user, role, restaurant name, full name, loading state, and auth methods
 type AuthContextType = {
   user: SupaUser | null;
   role: string | null;
   restaurantName: string | null;
+  fullName: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
   restaurantName: null,
+  fullName: null,
   loading: true,
   login: async () => {},
   logout: async () => {},
@@ -27,19 +29,27 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Helper to fetch user's role and restaurant name from profiles table
+// Helper to fetch user's role, restaurant name, and full name from profiles table
 const fetchProfileData = async (
   userId: string
-): Promise<{ role: string | null; restaurantName: string | null }> => {
+): Promise<{ role: string | null; restaurantName: string | null; fullName: string | null }> => {
+  // Selecting all columns to ensure full_name is included
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('role, restaurant_name')
+    .select('*')
     .eq('id', userId)
     .single();
   if (error || !profile) {
-    return { role: null, restaurantName: null };
+    console.error('[fetchProfileData] error or no profile:', error, profile);
+    return { role: null, restaurantName: null, fullName: null };
   }
-  return { role: profile.role, restaurantName: profile.restaurant_name };
+  // Debug retrieved values
+  console.log('[fetchProfileData] profile:', profile);
+  return {
+    role: profile.role ?? null,
+    restaurantName: profile.restaurant_name ?? null,
+    fullName: (profile as any).full_name ?? null,
+  };
 };
 
 // AuthProvider wraps the app and provides user state
@@ -47,6 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<SupaUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,18 +69,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(currentUser);
       if (currentUser) {
         try {
-          const { role: fetchedRole, restaurantName: fetchedRest } = await fetchProfileData(currentUser.id);
+          const { role: fetchedRole, restaurantName: fetchedRest, fullName: fetchedFull } = await fetchProfileData(currentUser.id);
           if (!mounted) return;
           setRole(fetchedRole);
           setRestaurantName(fetchedRest);
+          setFullName(fetchedFull);
         } catch {
           if (!mounted) return;
           setRole(null);
           setRestaurantName(null);
+          setFullName(null);
         }
       } else {
         setRole(null);
         setRestaurantName(null);
+        setFullName(null);
       }
       if (mounted) setLoading(false);
     };
@@ -112,10 +126,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
     setRole(null);
     setRestaurantName(null);
+    setFullName(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, restaurantName, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, role, restaurantName, fullName, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
