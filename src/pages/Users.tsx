@@ -26,7 +26,8 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Eye, Edit, Trash } from 'lucide-react'
+import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface User {
   id: string
@@ -126,28 +127,32 @@ export default function Users() {
         </div>
         {/* Table section */}
         <section className="bg-card border border-card rounded-xl overflow-hidden shadow-sm text-card-foreground">
-          {loading ? (
-            <div className="p-8 text-center">
-              <p>Cargando...</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id} className={header.column.id === 'actions' ? 'text-right' : undefined}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className={header.column.id === 'actions' ? 'text-right' : undefined}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading
+                ? Array.from({ length: 5 }).map((_, idx) => (
+                    <TableRow key={idx}>
+                      {columns.map((col, cidx) => (
+                        <TableCell key={cidx} className={col.id === 'actions' ? 'text-right' : undefined}>
+                          <Skeleton className={col.id === 'actions' ? 'h-5 w-8 ml-auto' : 'h-5 w-full'} />
+                        </TableCell>
                       ))}
                     </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length > 0 ? (
+                  ))
+                : table.getRowModel().rows.length > 0 ? (
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
@@ -164,23 +169,34 @@ export default function Users() {
                       </TableCell>
                     </TableRow>
                   )}
-                </TableBody>
-              </Table>
-              {/* Pagination and info */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
-                <span>
-                  {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} seleccionados.
-                </span>
-                <div className="space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                    Anterior
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                    Siguiente
-                  </Button>
-                </div>
+            </TableBody>
+          </Table>
+          {!loading && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
+              <span>
+                {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} seleccionados.
+              </span>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Siguiente"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-            </>
+            </div>
           )}
         </section>
       </PageContainer>

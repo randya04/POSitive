@@ -6,7 +6,11 @@ module.exports = {
     './public/index.html'
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Rubik', 'system-ui', 'ui-sans-serif', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 };
