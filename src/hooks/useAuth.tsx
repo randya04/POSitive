@@ -48,11 +48,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(session?.user ?? null);
         setLoading(false);
       })
-      .catch(err => {
+      .catch(() => {
         setLoading(false);
       });
     // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: AuthChangeEvent, session) => {
       setUser(session?.user ?? null);
     });
     return () => {
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (user) {
       fetchProfileRole(user.id)
         .then(roleValue => setRole(roleValue))
-        .catch(err => {});
+        .catch(() => {});
     } else {
       setRole(null);
     }
