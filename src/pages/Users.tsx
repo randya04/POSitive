@@ -25,6 +25,8 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { MoreVertical, Eye, Edit, Trash } from 'lucide-react'
 
 interface User {
   id: string
@@ -73,9 +75,27 @@ export default function Users() {
       id: 'actions',
       header: 'Acciones',
       cell: ({ row }) => (
-        <Button variant="destructive" onClick={() => handleDelete(row.original.id)}>
-          Eliminar
-        </Button>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <MoreVertical className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.original.id)}>
+                <Trash className="mr-2 h-4 w-4" />
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ]
@@ -105,7 +125,7 @@ export default function Users() {
           />
         </div>
         {/* Table section */}
-        <section className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+        <section className="bg-card border border-card rounded-xl overflow-hidden shadow-sm text-card-foreground">
           {loading ? (
             <div className="p-8 text-center">
               <p>Cargando...</p>
@@ -117,7 +137,7 @@ export default function Users() {
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id}>
+                        <TableHead key={header.id} className={header.column.id === 'actions' ? 'text-right' : undefined}>
                           {header.isPlaceholder
                             ? null
                             : flexRender(header.column.columnDef.header, header.getContext())}
@@ -131,7 +151,7 @@ export default function Users() {
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
+                          <TableCell key={cell.id} className={cell.column.id === 'actions' ? 'text-right' : undefined}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         ))}

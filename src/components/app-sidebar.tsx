@@ -7,6 +7,7 @@ import { NavMain } from "./nav-main"
 import { NavProjects } from "./nav-projects"
 import { NavSecondary } from "./nav-secondary"
 import { NavUser } from "./nav-user"
+import { DarkModeToggle } from '@/components/ui/dark-mode-toggle'
 import {
   Sidebar,
   SidebarProvider,
@@ -140,7 +141,9 @@ const data = {
       icon: Map,
     },
   ],
-}
+};
+
+export const navData = data;
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -169,6 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavSecondary items={data.navSecondary} className="mt-auto" />
         </SidebarContent>
         <SidebarFooter>
+          <DarkModeToggle />
           <NavUser user={data.user} />
         </SidebarFooter>
       </Sidebar>
