@@ -1,6 +1,7 @@
 import styles from './Dashboard.module.css';
 import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function Dashboard() {
   const { role, loading } = useAuth();
@@ -26,18 +27,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className={styles.container}>
-      <AppSidebar />
-      <div className={styles.main}>
-        {loading ? (
-          <p>Cargando...</p>
-        ) : (
-          <>
-            <h1 className={styles.title}>{title}</h1>
-            <p>{message}</p>
-          </>
-        )}
+    <SidebarProvider>
+      <div className={styles.container}>
+        <AppSidebar />
+        <div className={styles.main}>
+          {loading ? (
+            <p>Cargando...</p>
+          ) : (
+            <>
+              <h1 className={styles.title}>{title}</h1>
+              <p>{message}</p>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
