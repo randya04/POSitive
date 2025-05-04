@@ -115,15 +115,18 @@ export default function Users() {
   return (
     <Layout>
       <PageContainer>
-        {/* Title and search bar */}
-        <div className="mb-2">
-          <h1 className="text-lg font-semibold tracking-tight mb-2">Users</h1>
-          <Input
-            placeholder="Search email..."
-            value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-            onChange={(e) => table.getColumn('email')?.setFilterValue(e.target.value)}
-            className="max-w-sm"
-          />
+        {/* Title, search bar and create button */}
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-lg font-semibold tracking-tight">Users</h1>
+            <Input
+              placeholder="Search email..."
+              value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+              onChange={(e) => table.getColumn('email')?.setFilterValue(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+          <Button>Crear usuario</Button>
         </div>
         {/* Table section */}
         <section className="bg-card border border-card rounded-xl overflow-hidden shadow-sm text-card-foreground">

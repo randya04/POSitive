@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: '#7E3AF2',
+        'primary-foreground': '#ffffff',
+      },
       fontFamily: {
         sans: ['Rubik', 'system-ui', 'ui-sans-serif', 'sans-serif'],
       },
