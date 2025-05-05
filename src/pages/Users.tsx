@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { useRestaurantSearch, type Restaurant } from '@/hooks/useRestaurantSearch'
+import { useRestaurantSearch } from '@/hooks/useRestaurantSearch'
 import {
   createColumnHelper,
   ColumnDef,
