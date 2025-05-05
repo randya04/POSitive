@@ -245,7 +245,7 @@ export default function Users() {
                         >
                           {selectedRestaurantId
                             ? restaurantOptions.find(r => r.id === selectedRestaurantId)?.name
-                            : 'Busca restaurante...'}
+                            : 'Seleccionar restaurante...'}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -257,7 +257,7 @@ export default function Users() {
                           <CommandInput
                             value={restaurantQuery}
                             onValueChange={(value: string) => setRestaurantQuery(value)}
-                            placeholder="Busca restaurante..."
+                            placeholder="Buscar restaurante..."
                           />
                           <CommandList className="text-left">
                             <CommandEmpty>No restaurant found.</CommandEmpty>
