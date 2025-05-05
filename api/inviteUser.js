@@ -16,6 +16,17 @@ export default async function handler(req, res) {
   if (!full_name || !email || !role || phone == null || is_active == null) {
     return res.status(400).json({ error: 'full_name, email, role, phone, is_active are required' });
   }
+  // Check existing profile by email
+  const { data: existingProfiles, error: existingError } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .limit(1);
+  if (existingError) throw existingError;
+  // Block duplicate email invites for new users
+  if (existingProfiles.length) {
+    return res.status(409).json({ error: 'Ya existe un usuario con este correo electrónico' });
+  }
   try {
     // Invite user by email, passing user metadata
     const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
@@ -38,10 +49,12 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Could not fetch invited user ID', details: listError });
     }
     const userId = listData.users[0].id;
-    // Upsert profile manually (trigger disabled)
+    // Upsert profile; skip restaurant_id for super_admin
+    const profilePayload = { id: userId, full_name, email, role, phone, is_active };
+    if (role !== 'super_admin') profilePayload.restaurant_id = restaurant_id;
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .upsert({ id: userId, full_name, email, role, phone, is_active, restaurant_id }, { onConflict: 'id' });
+      .upsert(profilePayload, { onConflict: 'id' });
     console.log('profile upsert response:', { profileData, profileError });
     if (profileError) {
       console.error('profile upsert error:', profileError);
