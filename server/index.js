@@ -6,6 +6,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import inviteUserHandler from '../api/inviteUser.js';
+import usersHandler from '../api/users.js';
 
 const app = express();
 app.use(cors());
@@ -19,4 +20,5 @@ app.use((req, res, next) => {
 
 // Define API routes
 app.post('/api/inviteUser', inviteUserHandler);
+app.get('/api/users', usersHandler);
 app.listen(3000, () => console.log('API server listening on http://localhost:3000'));
