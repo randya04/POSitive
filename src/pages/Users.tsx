@@ -246,7 +246,7 @@ export default function Users() {
       if (result.data?.updated) {
         toast.success('Usuario actualizado')
       } else {
-        toast.success('Usuario creado')
+        toast.success('Usuario creado exitosamente')
       }
       fetchUsers()
       setOpen(false)
