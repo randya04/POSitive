@@ -45,6 +45,10 @@ export default async function handler(req, res) {
     console.log('profile upsert response:', { profileData, profileError });
     if (profileError) {
       console.error('profile upsert error:', profileError);
+      // If email already exists in profiles
+      if (profileError.code === '23505') {
+        return res.status(409).json({ error: 'Ya existe un usuario con este correo electrónico' });
+      }
       return res.status(500).json({ error: profileError.message, details: profileError });
     }
     // Skip branch assignment for super_admin role
