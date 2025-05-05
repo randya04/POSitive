@@ -89,6 +89,7 @@ export default function Users() {
   const [restaurantComboboxOpen, setRestaurantComboboxOpen] = useState(false);
   const [restaurantComboboxQuery, setRestaurantComboboxQuery] = useState('');
   const [restaurantComboboxValue, setRestaurantComboboxValue] = useState('');
+  const [search, setSearch] = useState('');
   const roleOptions = [
     { value: '', label: 'Todos' },
     { value: 'super_admin', label: 'Super Admin' },
@@ -314,6 +315,18 @@ export default function Users() {
     }
   }
 
+  const filteredUsers = users.filter((user) => {
+    if (!search.trim()) return true;
+    const s = search.toLowerCase();
+    return (
+      user.full_name?.toLowerCase().includes(s) ||
+      user.email?.toLowerCase().includes(s) ||
+      user.role?.toLowerCase().includes(s) ||
+      (user.restaurant || '').toLowerCase().includes(s) ||
+      (user.phone || '').toLowerCase().includes(s)
+    );
+  });
+
   return (
     <Layout>
       <PageContainer>
@@ -323,9 +336,9 @@ export default function Users() {
             <div className="flex flex-row items-center w-full justify-between gap-4 overflow-x-auto">
               <div className="flex flex-row flex-wrap items-center gap-2 flex-1 min-w-0">
                 <Input
-                  placeholder="Search..."
-                  value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-                  onChange={(e) => table.getColumn('email')?.setFilterValue(e.target.value)}
+                  placeholder="Buscar usuario, email, rol, restaurante o teléfono..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
                   className="max-w-sm"
                 />
                 <Popover>
@@ -691,16 +704,21 @@ export default function Users() {
                       ))}
                     </TableRow>
                   ))
-                : table.getRowModel().rows.length > 0 ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id} className="group">
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className={cell.column.id === 'details' ? 'pl-2 pr-0' : cell.column.id === 'full_name' ? 'pl-0' : undefined}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
+                : filteredUsers.length > 0 ? (
+                    filteredUsers.map((user, idx) => {
+                      // Crea una row virtual para flexRender, usando los helpers de la tabla
+                      const row = table.getRowModel().rows.find(r => r.original.id === user.id);
+                      if (!row) return null;
+                      return (
+                        <TableRow key={row.id} className="group">
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id} className={cell.column.id === 'details' ? 'pl-2 pr-0' : cell.column.id === 'full_name' ? 'pl-0' : undefined}>
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
@@ -713,7 +731,7 @@ export default function Users() {
           {!loading && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
               <span>
-                Mostrando {table.getRowModel().rows.length} de {table.getFilteredRowModel().rows.length}
+                Mostrando {filteredUsers.length} de {users.length}
               </span>
               <div className="space-x-2">
                 <Button
