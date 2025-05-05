@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Layout } from '@/components/Layout'
 import { PageContainer } from '@/components/PageContainer'
 import { Input } from '@/components/ui/input'
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
+import { Label } from '@/components/ui/label'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { useRestaurantSearch, type Restaurant } from '@/hooks/useRestaurantSearch'
 import {
   createColumnHelper,
   ColumnDef,
@@ -26,8 +30,18 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight, ChevronsUpDown, Check } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command'
+import { cn } from '@/lib/utils'
 
 interface User {
   id: string
@@ -35,11 +49,32 @@ interface User {
   role: string
 }
 
+interface Branch {
+  id: string
+  name: string
+}
+
 export default function Users() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [emailValue, setEmailValue] = useState('')
+  const [restaurantQuery, setRestaurantQuery] = useState('')
+  const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false)
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string|null>(null)
+  const [branchOptions, setBranchOptions] = useState<Branch[]>([])
+  const [isBranchLoading, setIsBranchLoading] = useState(false)
+  const [selectedBranchId, setSelectedBranchId] = useState<string|null>(null)
+  const [roleValue, setRoleValue] = useState<'Admin'|'Host'|'Super Admin'>('Host')
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const { data: restaurantOptions = [] } = useRestaurantSearch(supabase, restaurantQuery)
+  const filteredRestaurants = restaurantOptions.filter(r =>
+    r.name.toLowerCase().includes(restaurantQuery.toLowerCase())
+  )
 
   useEffect(() => {
     fetchUsers()
@@ -53,7 +88,7 @@ export default function Users() {
     if (error) {
       toast.error(error.message)
     } else {
-      setUsers(data)
+      setUsers(data ?? [])
     }
     setLoading(false)
   }
@@ -67,6 +102,34 @@ export default function Users() {
       fetchUsers()
     }
   }
+
+  useEffect(() => {
+    if (!selectedRestaurantId) {
+      setBranchOptions([])
+      return
+    }
+    const fetchBranches = async () => {
+      setIsBranchLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('branches')
+          .select('id,name')
+          .eq('restaurant_id', selectedRestaurantId)
+        if (error) {
+          console.error(error)
+          toast.error(error.message)
+        } else {
+          setBranchOptions(data ?? [])
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Error cargando sucursales')
+      } finally {
+        setIsBranchLoading(false)
+      }
+    }
+    fetchBranches()
+  }, [selectedRestaurantId])
 
   const columnHelper = createColumnHelper<User>()
   const columns: ColumnDef<User, any>[] = [
@@ -112,6 +175,29 @@ export default function Users() {
     getPaginationRowModel: getPaginationRowModel(),
   })
 
+  const handleSave = async () => {
+    const newErrors: Record<string,string> = {}
+    if (!name.trim()) newErrors.name = 'Nombre es requerido'
+    if (!emailValue.trim()) newErrors.email = 'Email es requerido'
+    if (!roleValue) newErrors.role = 'Rol es requerido'
+    if (roleValue !== 'Super Admin') {
+      if (!selectedRestaurantId) newErrors.restaurant = 'Restaurante es requerido'
+      if (!selectedBranchId) newErrors.branch = 'Sucursal es requerida'
+    }
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length) return
+    try {
+      const { error } = await supabase.from('profiles').insert([{ full_name: name, email: emailValue, role: roleValue, restaurant_id: selectedRestaurantId, branch_id: selectedBranchId }])
+      if (error) throw error
+      toast.success('Usuario creado')
+      fetchUsers()
+      setOpen(false)
+      setName(''); setEmailValue(''); setRestaurantQuery(''); setSelectedRestaurantId(null); setSelectedBranchId(null)
+    } catch (err:any) {
+      toast.error(err.message || 'Error creando usuario')
+    }
+  }
+
   return (
     <Layout>
       <PageContainer>
@@ -126,7 +212,117 @@ export default function Users() {
               className="max-w-sm"
             />
           </div>
-          <Button variant="default">Crear usuario</Button>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="default">Crear usuario</Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[350px]">
+              <SheetHeader>
+                <SheetTitle>Crear usuario</SheetTitle>
+                <SheetDescription>Introduce los datos del usuario</SheetDescription>
+              </SheetHeader>
+              <div className="grid gap-4 p-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Nombre completo</Label>
+                  <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" />
+                  {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={emailValue} onChange={e => setEmailValue(e.target.value)} placeholder="usuario@ejemplo.com" />
+                  {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="role">Rol</Label>
+                  <Select value={roleValue} onValueChange={value => setRoleValue(value as 'Admin'|'Host'|'Super Admin')}>
+                    <SelectTrigger id="role" className="w-full">
+                      <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Host">Host</SelectItem>
+                      <SelectItem value="Super Admin">Super Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.role && <p className="text-red-600 text-sm">{errors.role}</p>}
+                </div>
+                {(roleValue === 'Admin' || roleValue === 'Host') && (
+                  <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="restaurant">Restaurante</Label>
+                    <Popover open={restaurantPopoverOpen} onOpenChange={setRestaurantPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={restaurantPopoverOpen}
+                          className="w-full justify-between"
+                        >
+                          {selectedRestaurantId
+                            ? restaurantOptions.find(r => r.id === selectedRestaurantId)?.name
+                            : 'Busca restaurante...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="start"
+                        className="w-full sm:w-[350px] p-0 mt-1"
+                      >
+                        <Command className="w-full min-w-0">
+                          <CommandInput
+                            value={restaurantQuery}
+                            onValueChange={(value: string) => setRestaurantQuery(value)}
+                            placeholder="Busca restaurante..."
+                          />
+                          <CommandList className="text-left">
+                            <CommandEmpty>No restaurant found.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredRestaurants.slice(0, 5).map(r => (
+                                <CommandItem
+                                  key={r.id}
+                                  value={r.name}
+                                  onSelect={(currentValue: string) => {
+                                    const sel = restaurantOptions.find(x => x.name === currentValue)
+                                    const newId = sel?.id ?? null
+                                    setSelectedRestaurantId(newId === selectedRestaurantId ? null : newId)
+                                    setRestaurantQuery(sel?.name ?? '')
+                                    setRestaurantPopoverOpen(false)
+                                  }}
+                                >
+                                  {r.name}
+                                  <Check
+                                    className={cn(
+                                      'ml-auto h-4 w-4',
+                                      selectedRestaurantId === r.id ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {errors.restaurant && <p className="text-red-600 text-sm">{errors.restaurant}</p>}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="branch">Sucursal</Label>
+                    <Select value={selectedBranchId ?? ''} onValueChange={value => setSelectedBranchId(value)} disabled={isBranchLoading || !selectedRestaurantId}>
+                      <SelectTrigger id="branch" className="w-full"><SelectValue placeholder={isBranchLoading ? 'Cargando...' : 'Selecciona sucursal'} /></SelectTrigger>
+                      <SelectContent>
+                        {branchOptions.map(br => <SelectItem key={br.id} value={br.id}>{br.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {errors.branch && <p className="text-red-600 text-sm">{errors.branch}</p>}
+                  </div>
+                  </>
+                )}
+              </div>
+              <SheetFooter>
+                <Button variant="default" onClick={handleSave}>Guardar</Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
         {/* Table section */}
         <section className="bg-card border border-card rounded-xl overflow-hidden shadow-sm text-card-foreground">
