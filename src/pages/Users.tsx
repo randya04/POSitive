@@ -48,6 +48,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface User {
   id: string
+  full_name: string
   email: string
   role: string
 }
@@ -99,15 +100,17 @@ export default function Users() {
 
   async function fetchUsers() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, role')
-    if (error) {
-      toast.error(error.message)
-    } else {
-      setUsers(data ?? [])
+    try {
+      const response = await fetch(`${API_URL}/api/users`)
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Error fetching users')
+      setUsers(result.data)
+    } catch (err) {
+      console.error('fetchUsers error:', err)
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleDelete(id: string) {
@@ -122,6 +125,7 @@ export default function Users() {
 
   const columnHelper = createColumnHelper<User>()
   const columns: ColumnDef<User, any>[] = [
+    columnHelper.accessor('full_name', { header: 'Nombre' }),
     columnHelper.accessor('email', { header: 'Email' }),
     columnHelper.accessor('role', { header: 'Rol' }),
     {
