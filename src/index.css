@@ -112,8 +112,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  /* Dark mode text color */
-  --foreground-rgb: 255 255 255;
+  /* Use a softer white for dark mode text */
+  --foreground-rgb: 250 250 250;
 }
 
 @layer base {
