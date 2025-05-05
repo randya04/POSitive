@@ -51,6 +51,9 @@ interface User {
   full_name: string
   email: string
   role: string
+  restaurant: string | null
+  phone: string
+  is_active: boolean
 }
 
 interface Branch {
@@ -105,9 +108,10 @@ export default function Users() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Error fetching users')
       setUsers(result.data)
-    } catch (err) {
-      console.error('fetchUsers error:', err)
-      toast.error(err.message)
+    } catch (unknownError) {
+      const errorMessage = unknownError instanceof Error ? unknownError.message : String(unknownError)
+      console.error('fetchUsers error:', unknownError)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -123,11 +127,35 @@ export default function Users() {
     }
   }
 
+  async function handleToggleActive(id: string, isActive: boolean) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: isActive })
+        .eq('id', id)
+      if (error) throw error
+      toast.success(`Usuario ${isActive ? 'activado' : 'desactivado'}`)
+      fetchUsers()
+    } catch (toggleError) {
+      console.error('Error toggling user active state:', toggleError)
+      toast.error(toggleError instanceof Error ? toggleError.message : 'Error actualizando estado')
+    }
+  }
+
   const columnHelper = createColumnHelper<User>()
   const columns: ColumnDef<User, any>[] = [
     columnHelper.accessor('full_name', { header: 'Nombre' }),
     columnHelper.accessor('email', { header: 'Email' }),
     columnHelper.accessor('role', { header: 'Rol' }),
+    columnHelper.accessor('restaurant', { header: 'Restaurante' }),
+    columnHelper.accessor('phone', { header: 'Teléfono' }),
+    columnHelper.display({
+      id: 'is_active',
+      header: 'Estado',
+      cell: ({ row }) => (
+        <Switch checked={row.original.is_active} onCheckedChange={(value: boolean) => handleToggleActive(row.original.id, value)} />
+      ),
+    }),
     {
       id: 'actions',
       header: 'Acciones',
@@ -398,7 +426,7 @@ export default function Users() {
           {!loading && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
               <span>
-                {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} seleccionados.
+                Mostrando {table.getRowModel().rows.length} de {table.getFilteredRowModel().rows.length}
               </span>
               <div className="space-x-2">
                 <Button
