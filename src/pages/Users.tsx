@@ -9,6 +9,7 @@ import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescri
 import { Label } from '@/components/ui/label'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { useRestaurantSearch } from '@/hooks/useRestaurantSearch'
+import { useQuery } from '@tanstack/react-query'
 import {
   createColumnHelper,
   ColumnDef,
@@ -65,8 +66,6 @@ export default function Users() {
   const [restaurantQuery, setRestaurantQuery] = useState('')
   const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false)
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string|null>(null)
-  const [branchOptions, setBranchOptions] = useState<Branch[]>([])
-  const [isBranchLoading, setIsBranchLoading] = useState(false)
   const [selectedBranchId, setSelectedBranchId] = useState<string|null>(null)
   const [roleValue, setRoleValue] = useState<'Admin'|'Host'|'Super Admin'>('Host')
   const [errors, setErrors] = useState<Record<string,string>>({})
@@ -75,6 +74,20 @@ export default function Users() {
   const filteredRestaurants = restaurantOptions.filter(r =>
     r.name.toLowerCase().includes(restaurantQuery.toLowerCase())
   )
+
+  const { data: branchOptions = [], isLoading: isBranchLoading, error: branchError } = useQuery<Branch[], Error>({
+    queryKey: ['branches', selectedRestaurantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name')
+        .eq('restaurant_id', selectedRestaurantId!)
+        .order('name')
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: Boolean(selectedRestaurantId),
+  })
 
   useEffect(() => {
     fetchUsers()
@@ -102,34 +115,6 @@ export default function Users() {
       fetchUsers()
     }
   }
-
-  useEffect(() => {
-    if (!selectedRestaurantId) {
-      setBranchOptions([])
-      return
-    }
-    const fetchBranches = async () => {
-      setIsBranchLoading(true)
-      try {
-        const { data, error } = await supabase
-          .from('branches')
-          .select('id,name')
-          .eq('restaurant_id', selectedRestaurantId)
-        if (error) {
-          console.error(error)
-          toast.error(error.message)
-        } else {
-          setBranchOptions(data ?? [])
-        }
-      } catch (err) {
-        console.error(err)
-        toast.error('Error cargando sucursales')
-      } finally {
-        setIsBranchLoading(false)
-      }
-    }
-    fetchBranches()
-  }, [selectedRestaurantId])
 
   const columnHelper = createColumnHelper<User>()
   const columns: ColumnDef<User, any>[] = [
@@ -310,9 +295,10 @@ export default function Users() {
                     <Select value={selectedBranchId ?? ''} onValueChange={value => setSelectedBranchId(value)} disabled={isBranchLoading || !selectedRestaurantId}>
                       <SelectTrigger id="branch" className="w-full"><SelectValue placeholder={isBranchLoading ? 'Cargando...' : 'Selecciona sucursal'} /></SelectTrigger>
                       <SelectContent>
-                        {branchOptions.map(br => <SelectItem key={br.id} value={br.id}>{br.name}</SelectItem>)}
+                        {branchOptions.map((br: Branch) => <SelectItem key={br.id} value={br.id}>{br.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {branchError && <p className="text-red-600 text-sm">{branchError.message}</p>}
                     {errors.branch && <p className="text-red-600 text-sm">{errors.branch}</p>}
                   </div>
                   </>
