@@ -165,7 +165,15 @@ export default function Users() {
       id: 'is_active',
       header: 'Estado',
       cell: ({ row }) => (
-        <Switch checked={row.original.is_active} onCheckedChange={(value: boolean) => handleToggleActive(row.original.id, value)} />
+        <Switch
+          checked={row.original.role === 'super_admin' ? true : row.original.is_active}
+          disabled={row.original.role === 'super_admin'}
+          onCheckedChange={(value: boolean) => {
+            if (row.original.role !== 'super_admin') {
+              handleToggleActive(row.original.id, value)
+            }
+          }}
+        />
       ),
     }),
     {
@@ -385,7 +393,16 @@ export default function Users() {
                 )}
                 <div className="flex items-center gap-2">
                   <Label htmlFor="isActive">Estado</Label>
-                  <Switch id="isActive" checked={isActive} onCheckedChange={setIsActive} />
+                  <Switch
+                    id="isActive"
+                    checked={roleValue === 'Super Admin' ? true : isActive}
+                    disabled={roleValue === 'Super Admin'}
+                    onCheckedChange={(value: boolean) => {
+                      if (roleValue !== 'Super Admin') {
+                        setIsActive(value)
+                      }
+                    }}
+                  />
                 </div>
               </div>
               <SheetFooter>
