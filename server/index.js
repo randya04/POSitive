@@ -21,4 +21,5 @@ app.use((req, res, next) => {
 // Define API routes
 app.post('/api/inviteUser', inviteUserHandler);
 app.get('/api/users', usersHandler);
+app.patch('/api/users', usersHandler);
 app.listen(3000, () => console.log('API server listening on http://localhost:3000'));

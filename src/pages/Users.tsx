@@ -108,6 +108,7 @@ export default function Users() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Error fetching users')
       setUsers(result.data)
+      console.log('Fetched users:', result.data)
     } catch (unknownError) {
       const errorMessage = unknownError instanceof Error ? unknownError.message : String(unknownError)
       console.error('fetchUsers error:', unknownError)
@@ -129,16 +130,20 @@ export default function Users() {
 
   async function handleToggleActive(id: string, isActive: boolean) {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: isActive })
-        .eq('id', id)
-      if (error) throw error
+      const response = await fetch(`${API_URL}/api/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_active: isActive }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Error actualizando estado')
       toast.success(`Usuario ${isActive ? 'activado' : 'desactivado'}`)
-      fetchUsers()
+      // Update local state to avoid full table refresh
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, is_active: isActive } : u))
     } catch (toggleError) {
       console.error('Error toggling user active state:', toggleError)
-      toast.error(toggleError instanceof Error ? toggleError.message : 'Error actualizando estado')
+      const message = toggleError instanceof Error ? toggleError.message : String(toggleError)
+      toast.error(message)
     }
   }
 
@@ -147,8 +152,14 @@ export default function Users() {
     columnHelper.accessor('full_name', { header: 'Nombre' }),
     columnHelper.accessor('email', { header: 'Email' }),
     columnHelper.accessor('role', { header: 'Rol' }),
-    columnHelper.accessor('restaurant', { header: 'Restaurante' }),
-    columnHelper.accessor('phone', { header: 'Teléfono' }),
+    columnHelper.accessor('restaurant', {
+      header: 'Restaurante',
+      cell: ({ getValue }) => getValue() ?? '—',
+    }),
+    columnHelper.accessor('phone', {
+      header: 'Teléfono',
+      cell: ({ getValue }) => getValue() || '—',
+    }),
     columnHelper.display({
       id: 'is_active',
       header: 'Estado',
