@@ -2,6 +2,7 @@ import 'dotenv/config';
 // DEBUG: verificar variables de entorno
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
 console.log('SERVICE_ROLE_KEY present?:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import inviteUserHandler from '../api/inviteUser.js';
