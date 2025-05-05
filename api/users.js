@@ -44,20 +44,31 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: err.message });
     }
   } else if (req.method === 'PATCH') {
-    const { id, is_active } = req.body;
-    if (!id || typeof is_active !== 'boolean') {
-      return res.status(400).json({ error: 'id and is_active are required' });
+    const { id, full_name, email, phone, role, is_active, restaurant_id, branch_id } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'id is required' });
     }
     try {
-      // Update user active state
-      const { error: updateError } = await supabaseAdmin
+      // Construir objeto de actualización solo con campos presentes
+      const updateFields = {};
+      if (typeof full_name !== 'undefined') updateFields.full_name = full_name;
+      if (typeof email !== 'undefined') updateFields.email = email;
+      if (typeof phone !== 'undefined') updateFields.phone = phone;
+      if (typeof role !== 'undefined') updateFields.role = role;
+      if (typeof is_active !== 'undefined') updateFields.is_active = is_active;
+      if (typeof restaurant_id !== 'undefined') updateFields.restaurant_id = restaurant_id;
+      if (typeof branch_id !== 'undefined') updateFields.branch_id = branch_id;
+
+      const { error: updateError, data: updatedData } = await supabaseAdmin
         .from('profiles')
-        .update({ is_active })
-        .eq('id', id);
+        .update(updateFields)
+        .eq('id', id)
+        .select()
+        .single();
       if (updateError) throw updateError;
-      return res.status(200).json({ data: { id, is_active } });
+      return res.status(200).json({ data: updatedData });
     } catch (err) {
-      console.error('update user active error:', err);
+      console.error('update user error:', err);
       return res.status(500).json({ error: err.message });
     }
   } else {

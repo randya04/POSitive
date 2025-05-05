@@ -51,6 +51,7 @@ interface User {
   email: string
   role: string
   restaurant: string | null
+  branch_id?: string | null
   phone: string
   is_active: boolean
 }
@@ -481,21 +482,204 @@ export default function Users() {
       <Sheet open={editOpen} onOpenChange={(val) => { if (!val) setSelectedUser(null); setEditOpen(val); }}>
         <SheetContent side="right" className="w-[350px]">
           <SheetHeader>
-            <SheetTitle>Ver / Editar usuario</SheetTitle>
-            <SheetDescription>Detalles del usuario</SheetDescription>
+            <SheetTitle>Editar usuario</SheetTitle>
+            <SheetDescription>Actualiza los datos del usuario</SheetDescription>
           </SheetHeader>
-          <div className="p-4 grid gap-2">
-            <p><strong>Nombre:</strong> {selectedUser?.full_name}</p>
-            <p><strong>Email:</strong> {selectedUser?.email}</p>
-            <p><strong>Rol:</strong> {selectedUser?.role}</p>
-            <p><strong>Teléfono:</strong> {selectedUser?.phone}</p>
-            <p><strong>Activo:</strong> {selectedUser?.is_active ? 'Sí' : 'No'}</p>
-          </div>
-          <SheetFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cerrar</Button>
-          </SheetFooter>
+          {selectedUser && (
+            <EditUserForm user={selectedUser} onClose={() => setEditOpen(false)} fetchUsers={fetchUsers} />
+          )}
         </SheetContent>
       </Sheet>
     </Layout>
+  )
+}
+
+type EditUserFormProps = { user: User, onClose: () => void, fetchUsers: () => void }
+function EditUserForm({ user, onClose, fetchUsers }: EditUserFormProps) {
+  type RoleLabel = 'Super Admin' | 'Admin' | 'Host';
+  const [name, setName] = useState(user.full_name || '')
+  const [email, setEmail] = useState(user.email || '')
+  const [phone, setPhone] = useState(user.phone || '')
+  const [role, setRole] = useState<RoleLabel>(user.role === 'super_admin' ? 'Super Admin' : user.role === 'restaurant_admin' ? 'Admin' : 'Host')
+  const [isActive, setIsActive] = useState(user.is_active)
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const [restaurantQuery, setRestaurantQuery] = useState('')
+  const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false)
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string|null>(user.restaurant ?? null)
+  const [selectedBranchId, setSelectedBranchId] = useState<string|null>(user.branch_id ?? null)
+  const [branchOptions, setBranchOptions] = useState<Branch[]>([])
+  const [restaurantOptions, setRestaurantOptions] = useState<{id: string, name: string}[]>([])
+  const [isBranchLoading, setIsBranchLoading] = useState(false)
+  const [branchError, setBranchError] = useState<any>(null)
+
+  useEffect(() => {
+    async function fetchRestaurants() {
+      const { data, error } = await supabase.from('restaurants').select('id, name').order('name')
+      if (!error) setRestaurantOptions(data || [])
+    }
+    fetchRestaurants()
+  }, [])
+
+  useEffect(() => {
+    if (!selectedRestaurantId) { setBranchOptions([]); setSelectedBranchId(null); return }
+    setIsBranchLoading(true)
+    supabase.from('branches').select('id, name').eq('restaurant_id', selectedRestaurantId).order('name')
+      .then(({ data, error }) => {
+        setBranchOptions(data || [])
+        setIsBranchLoading(false)
+        setBranchError(error)
+      })
+  }, [selectedRestaurantId])
+
+  const handleUpdate = async () => {
+    const newErrors: Record<string,string> = {}
+    if (!name.trim()) newErrors.name = 'Nombre es requerido'
+    if (!email.trim()) newErrors.email = 'Email es requerido'
+    if (!phone.trim()) newErrors.phone = 'Teléfono es requerido'
+    if (!role) newErrors.role = 'Rol es requerido'
+    if (role !== 'Super Admin') {
+      if (!selectedRestaurantId) newErrors.restaurant = 'Restaurante es requerido'
+      if (!selectedBranchId) newErrors.branch = 'Sucursal es requerida'
+    }
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length) return
+    setLoading(true)
+    try {
+      const roleMap: Record<RoleLabel, string> = { 'Super Admin': 'super_admin', 'Admin': 'restaurant_admin', 'Host': 'host' };
+      const body: any = {
+        id: user.id,
+        full_name: name,
+        email,
+        phone,
+        role: roleMap[role],
+        is_active: isActive,
+      }
+      if (role !== 'Super Admin') {
+        body.restaurant_id = selectedRestaurantId
+        body.branch_id = selectedBranchId
+      }
+      const response = await fetch(`${API_URL}/api/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Error actualizando usuario')
+      toast.success('Usuario actualizado')
+      fetchUsers()
+      onClose()
+    } catch (err: any) {
+      toast.error(err.message || 'Error actualizando usuario')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-4 p-4">
+      <div className="grid gap-2">
+        <Label htmlFor="edit-name">Nombre completo</Label>
+        <Input id="edit-name" value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" />
+        {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="edit-email">Email</Label>
+        <Input id="edit-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@ejemplo.com" />
+        {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="edit-phone">Teléfono</Label>
+        <Input id="edit-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Teléfono" />
+        {errors.phone && <p className="text-red-600 text-sm">{errors.phone}</p>}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="edit-role">Rol</Label>
+        <Select value={role} onValueChange={value => setRole(value as RoleLabel)}>
+          <SelectTrigger id="edit-role" className="w-full">
+            <SelectValue placeholder="Selecciona un rol" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="Host">Host</SelectItem>
+            <SelectItem value="Super Admin">Super Admin</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors.role && <p className="text-red-600 text-sm">{errors.role}</p>}
+      </div>
+      {(role === 'Admin' || role === 'Host') && (
+        <>
+        <div className="grid gap-2">
+          <Label htmlFor="edit-restaurant">Restaurante</Label>
+          <Popover open={restaurantPopoverOpen} onOpenChange={setRestaurantPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={restaurantPopoverOpen}
+                className="w-full justify-between"
+              >
+                {selectedRestaurantId
+                  ? restaurantOptions.find(r => r.id === selectedRestaurantId)?.name
+                  : 'Seleccionar restaurante...'}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-full sm:w-[350px] p-0 mt-1">
+              <Command className="w-full min-w-0">
+                <CommandInput
+                  value={restaurantQuery}
+                  onValueChange={(value: string) => setRestaurantQuery(value)}
+                  placeholder="Buscar restaurante..."
+                />
+                <CommandList className="text-left">
+                  <CommandEmpty>No restaurant found.</CommandEmpty>
+                  <CommandGroup>
+                    {restaurantOptions.filter(r => r.name.toLowerCase().includes(restaurantQuery.toLowerCase())).slice(0, 5).map(r => (
+                      <CommandItem
+                        key={r.id}
+                        value={r.name}
+                        onSelect={(currentValue: string) => {
+                          const sel = restaurantOptions.find(x => x.name === currentValue)
+                          const newId = sel?.id ?? null
+                          setSelectedRestaurantId(newId === selectedRestaurantId ? null : newId)
+                          setRestaurantQuery(sel?.name ?? '')
+                          setRestaurantPopoverOpen(false)
+                        }}
+                      >
+                        {r.name}
+                        <Check className={cn('ml-auto h-4 w-4', selectedRestaurantId === r.id ? 'opacity-100' : 'opacity-0')} />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.restaurant && <p className="text-red-600 text-sm">{errors.restaurant}</p>}
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="edit-branch">Sucursal</Label>
+          <Select value={selectedBranchId ?? ''} onValueChange={value => setSelectedBranchId(value)} disabled={isBranchLoading || !selectedRestaurantId}>
+            <SelectTrigger id="edit-branch" className="w-full"><SelectValue placeholder={isBranchLoading ? 'Cargando...' : 'Selecciona sucursal'} /></SelectTrigger>
+            <SelectContent>
+              {branchOptions.map((br: Branch) => <SelectItem key={br.id} value={br.id}>{br.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {branchError && <p className="text-red-600 text-sm">{branchError.message}</p>}
+          {errors.branch && <p className="text-red-600 text-sm">{errors.branch}</p>}
+        </div>
+        </>
+      )}
+      <div className="flex items-center gap-2">
+        <Label htmlFor="edit-isActive">Estado</Label>
+        <Switch id="edit-isActive" checked={role === 'Super Admin' ? true : isActive} disabled={role === 'Super Admin'} onCheckedChange={value => { if (role !== 'Super Admin') setIsActive(value) }} />
+      </div>
+      <SheetFooter>
+        <Button variant="default" onClick={handleUpdate} disabled={loading}>{loading ? 'Guardando...' : 'Guardar cambios'}</Button>
+        <Button variant="outline" onClick={onClose}>Cancelar</Button>
+      </SheetFooter>
+    </div>
   )
 }
