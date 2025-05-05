@@ -30,8 +30,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, Check, Loader2, Maximize2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import {
@@ -78,6 +77,8 @@ export default function Users() {
   const [phone, setPhone] = useState<string>('')
   const [isActive, setIsActive] = useState<boolean>(true)
   const [isSaving, setIsSaving] = useState<boolean>(false)
+  const [editOpen, setEditOpen] = useState<boolean>(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   const { data: restaurantOptions = [] } = useRestaurantSearch(supabase, restaurantQuery)
   const filteredRestaurants = restaurantOptions.filter(r =>
@@ -119,16 +120,6 @@ export default function Users() {
     }
   }
 
-  async function handleDelete(id: string) {
-    const { error } = await supabase.from('profiles').delete().eq('id', id)
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success('Usuario eliminado')
-      fetchUsers()
-    }
-  }
-
   async function handleToggleActive(id: string, isActive: boolean) {
     try {
       const response = await fetch(`${API_URL}/api/users`, {
@@ -150,6 +141,21 @@ export default function Users() {
 
   const columnHelper = createColumnHelper<User>()
   const columns: ColumnDef<User, any>[] = [
+    // Details toggle column using Shadcn icon button
+    columnHelper.display({
+      id: 'details',
+      header: () => null,
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="opacity-0 group-hover:opacity-100"
+          onClick={() => { setSelectedUser(row.original); setEditOpen(true); }}
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
+      ),
+    }),
     columnHelper.accessor('full_name', { header: 'Nombre' }),
     columnHelper.accessor('email', { header: 'Email' }),
     columnHelper.accessor('role', { header: 'Rol' }),
@@ -176,33 +182,6 @@ export default function Users() {
         />
       ),
     }),
-    {
-      id: 'actions',
-      header: 'Acciones',
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <MoreVertical className="h-5 w-5 text-muted-foreground hover:text-foreground cursor-pointer" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.original.id)}>
-                <Trash className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
   ]
   const table = useReactTable({
     data: users,
@@ -429,7 +408,7 @@ export default function Users() {
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
-                      className={`${header.column.id === 'actions' ? 'text-right' : ''} text-xs font-normal`}
+                      className={`${header.column.id === 'details' ? 'pl-2 pr-0' : ''} text-xs font-normal`}
                     >
                       {header.isPlaceholder
                         ? null
@@ -444,17 +423,17 @@ export default function Users() {
                 ? Array.from({ length: 5 }).map((_, idx) => (
                     <TableRow key={idx}>
                       {columns.map((col, cidx) => (
-                        <TableCell key={cidx} className={col.id === 'actions' ? 'text-right' : undefined}>
-                          <Skeleton className={col.id === 'actions' ? 'h-5 w-8 ml-auto' : 'h-5 w-full'} />
+                        <TableCell key={cidx} className={col.id === 'details' ? 'pl-2 pr-0' : undefined}>
+                          <Skeleton className={col.id === 'details' ? 'h-5 w-8 ml-auto' : 'h-5 w-full'} />
                         </TableCell>
                       ))}
                     </TableRow>
                   ))
                 : table.getRowModel().rows.length > 0 ? (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
+                      <TableRow key={row.id} className="group">
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className={cell.column.id === 'actions' ? 'text-right' : undefined}>
+                          <TableCell key={cell.id} className={cell.column.id === 'details' ? 'pl-2 pr-0' : cell.column.id === 'full_name' ? 'pl-0' : undefined}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         ))}
@@ -498,6 +477,25 @@ export default function Users() {
           )}
         </section>
       </PageContainer>
+      {/* Edit User Sheet */}
+      <Sheet open={editOpen} onOpenChange={(val) => { if (!val) setSelectedUser(null); setEditOpen(val); }}>
+        <SheetContent side="right" className="w-[350px]">
+          <SheetHeader>
+            <SheetTitle>Ver / Editar usuario</SheetTitle>
+            <SheetDescription>Detalles del usuario</SheetDescription>
+          </SheetHeader>
+          <div className="p-4 grid gap-2">
+            <p><strong>Nombre:</strong> {selectedUser?.full_name}</p>
+            <p><strong>Email:</strong> {selectedUser?.email}</p>
+            <p><strong>Rol:</strong> {selectedUser?.role}</p>
+            <p><strong>Teléfono:</strong> {selectedUser?.phone}</p>
+            <p><strong>Activo:</strong> {selectedUser?.is_active ? 'Sí' : 'No'}</p>
+          </div>
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cerrar</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </Layout>
   )
 }
