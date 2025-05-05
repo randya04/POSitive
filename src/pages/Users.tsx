@@ -31,7 +31,7 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight, ChevronsUpDown, Check } from 'lucide-react'
+import { MoreVertical, Eye, Edit, Trash, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Loader2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import {
@@ -77,6 +77,7 @@ export default function Users() {
   const [errors, setErrors] = useState<Record<string,string>>({})
   const [phone, setPhone] = useState<string>('')
   const [isActive, setIsActive] = useState<boolean>(true)
+  const [isSaving, setIsSaving] = useState<boolean>(false)
 
   const { data: restaurantOptions = [] } = useRestaurantSearch(supabase, restaurantQuery)
   const filteredRestaurants = restaurantOptions.filter(r =>
@@ -207,7 +208,7 @@ export default function Users() {
     getPaginationRowModel: getPaginationRowModel(),
   })
 
-  const handleSave = async () => {
+  async function handleSave() {
     const newErrors: Record<string,string> = {}
     if (!name.trim()) newErrors.name = 'Nombre es requerido'
     if (!emailValue.trim()) newErrors.email = 'Email es requerido'
@@ -219,6 +220,7 @@ export default function Users() {
     }
     setErrors(newErrors)
     if (Object.keys(newErrors).length) return
+    setIsSaving(true)
     try {
       const roleMap = {
         'Super Admin': 'super_admin',
@@ -240,12 +242,19 @@ export default function Users() {
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Error creando usuario')
-      toast.success('Usuario creado')
+      // Show message based on creation or update
+      if (result.data?.updated) {
+        toast.success('Usuario actualizado')
+      } else {
+        toast.success('Usuario creado')
+      }
       fetchUsers()
       setOpen(false)
       setName(''); setEmailValue(''); setRestaurantQuery(''); setSelectedRestaurantId(null); setSelectedBranchId(null); setPhone(''); setIsActive(true)
     } catch (err: any) {
       toast.error(err.message || 'Error creando usuario')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -380,7 +389,16 @@ export default function Users() {
                 </div>
               </div>
               <SheetFooter>
-                <Button variant="default" onClick={handleSave}>Guardar</Button>
+                <Button variant="default" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Guardar'
+                  )}
+                </Button>
               </SheetFooter>
             </SheetContent>
           </Sheet>
