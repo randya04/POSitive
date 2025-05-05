@@ -171,7 +171,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarContent>
         <SidebarFooter>
           <DarkModeToggle />
-          <NavUser user={data.user} />
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
     </SidebarProvider>

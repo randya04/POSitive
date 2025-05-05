@@ -55,10 +55,7 @@ function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
-  className,
-  style,
   children,
-  ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean
   open?: boolean
@@ -137,7 +134,6 @@ function Sidebar({
   side = "left",
   variant = "sidebar",
   collapsible = "offcanvas",
-  className,
   children,
   ...props
 }: React.ComponentProps<"div"> & {
@@ -153,7 +149,7 @@ function Sidebar({
         data-slot="sidebar"
         className={cn(
           "bg-sidebar text-sidebar-foreground flex h-full w-[var(--sidebar-width)] flex-col",
-          className
+          props.className
         )}
         style={{
           "--sidebar-width": SIDEBAR_WIDTH,
@@ -212,7 +208,7 @@ function Sidebar({
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className
+          props.className
         )}
         style={{
           "--sidebar-width": SIDEBAR_WIDTH,
