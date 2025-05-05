@@ -89,7 +89,7 @@ export default function Users() {
   const [restaurantComboboxOpen, setRestaurantComboboxOpen] = useState(false);
   const [restaurantComboboxQuery, setRestaurantComboboxQuery] = useState('');
   const [restaurantComboboxValue, setRestaurantComboboxValue] = useState('');
-  const [search, setSearch] = useState('');
+  const [globalFilter, setGlobalFilter] = useState('');
   const roleOptions = [
     { value: '', label: 'Todos' },
     { value: 'super_admin', label: 'Super Admin' },
@@ -178,9 +178,33 @@ export default function Users() {
         </Button>
       ),
     }),
-    columnHelper.accessor('full_name', { header: 'Nombre' }),
+    columnHelper.accessor('full_name', {
+      header: ({ column }) => (
+        <button
+          type="button"
+          className="flex items-center gap-1 group text-left select-none"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Nombre
+          <ChevronsUpDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
+      ),
+      enableSorting: true,
+    }),
     columnHelper.accessor('email', { header: 'Email' }),
-    columnHelper.accessor('role', { header: 'Rol' }),
+    columnHelper.accessor('role', {
+      header: ({ column }) => (
+        <button
+          type="button"
+          className="flex items-center gap-1 group text-left select-none"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Rol
+          <ChevronsUpDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </button>
+      ),
+      enableSorting: true,
+    }),
     columnHelper.accessor('restaurant', {
       header: 'Restaurante',
       cell: ({ getValue }) => getValue() ?? '—',
@@ -208,9 +232,22 @@ export default function Users() {
   const table = useReactTable({
     data: users,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, globalFilter },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, columnId, filterValue) => {
+      // Busca en nombre, email, rol, restaurante y teléfono
+      const s = filterValue.toLowerCase();
+      const user = row.original;
+      return (
+        user.full_name?.toLowerCase().includes(s) ||
+        user.email?.toLowerCase().includes(s) ||
+        user.role?.toLowerCase().includes(s) ||
+        (user.restaurant || '').toLowerCase().includes(s) ||
+        (user.phone || '').toLowerCase().includes(s)
+      );
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -315,18 +352,6 @@ export default function Users() {
     }
   }
 
-  const filteredUsers = users.filter((user) => {
-    if (!search.trim()) return true;
-    const s = search.toLowerCase();
-    return (
-      user.full_name?.toLowerCase().includes(s) ||
-      user.email?.toLowerCase().includes(s) ||
-      user.role?.toLowerCase().includes(s) ||
-      (user.restaurant || '').toLowerCase().includes(s) ||
-      (user.phone || '').toLowerCase().includes(s)
-    );
-  });
-
   return (
     <Layout>
       <PageContainer>
@@ -337,8 +362,8 @@ export default function Users() {
               <div className="flex flex-row flex-wrap items-center gap-2 flex-1 min-w-0">
                 <Input
                   placeholder="Buscar usuario, email, rol, restaurante o teléfono..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  value={globalFilter}
+                  onChange={e => table.setGlobalFilter(e.target.value)}
                   className="max-w-sm"
                 />
                 <Popover>
@@ -704,21 +729,16 @@ export default function Users() {
                       ))}
                     </TableRow>
                   ))
-                : filteredUsers.length > 0 ? (
-                    filteredUsers.map((user, idx) => {
-                      // Crea una row virtual para flexRender, usando los helpers de la tabla
-                      const row = table.getRowModel().rows.find(r => r.original.id === user.id);
-                      if (!row) return null;
-                      return (
-                        <TableRow key={row.id} className="group">
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id} className={cell.column.id === 'details' ? 'pl-2 pr-0' : cell.column.id === 'full_name' ? 'pl-0' : undefined}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      );
-                    })
+                : table.getRowModel().rows.length > 0 ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id} className="group">
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className={cell.column.id === 'details' ? 'pl-2 pr-0' : cell.column.id === 'full_name' ? 'pl-0' : undefined}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
@@ -731,7 +751,7 @@ export default function Users() {
           {!loading && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
               <span>
-                Mostrando {filteredUsers.length} de {users.length}
+                Mostrando {table.getFilteredRowModel().rows.length} de {users.length}
               </span>
               <div className="space-x-2">
                 <Button
