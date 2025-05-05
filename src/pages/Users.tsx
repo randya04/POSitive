@@ -43,6 +43,8 @@ import {
   CommandItem,
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
+import { Switch } from '@/components/ui/switch'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface User {
   id: string
@@ -69,6 +71,8 @@ export default function Users() {
   const [selectedBranchId, setSelectedBranchId] = useState<string|null>(null)
   const [roleValue, setRoleValue] = useState<'Admin'|'Host'|'Super Admin'>('Host')
   const [errors, setErrors] = useState<Record<string,string>>({})
+  const [phone, setPhone] = useState<string>('')
+  const [isActive, setIsActive] = useState<boolean>(true)
 
   const { data: restaurantOptions = [] } = useRestaurantSearch(supabase, restaurantQuery)
   const filteredRestaurants = restaurantOptions.filter(r =>
@@ -164,6 +168,7 @@ export default function Users() {
     const newErrors: Record<string,string> = {}
     if (!name.trim()) newErrors.name = 'Nombre es requerido'
     if (!emailValue.trim()) newErrors.email = 'Email es requerido'
+    if (!phone.trim()) newErrors.phone = 'Teléfono es requerido'
     if (!roleValue) newErrors.role = 'Rol es requerido'
     if (roleValue !== 'Super Admin') {
       if (!selectedRestaurantId) newErrors.restaurant = 'Restaurante es requerido'
@@ -172,13 +177,31 @@ export default function Users() {
     setErrors(newErrors)
     if (Object.keys(newErrors).length) return
     try {
-      const { error } = await supabase.from('profiles').insert([{ full_name: name, email: emailValue, role: roleValue, restaurant_id: selectedRestaurantId, branch_id: selectedBranchId }])
-      if (error) throw error
+      const roleMap = {
+        'Super Admin': 'super_admin',
+        'Admin': 'restaurant_admin',
+        'Host': 'host',
+      };
+      const response = await fetch(`${API_URL}/api/inviteUser`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: name,
+          email: emailValue,
+          role: roleMap[roleValue] || roleValue,
+          phone,
+          is_active: isActive,
+          restaurant_id: selectedRestaurantId,
+          branch_id: selectedBranchId
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Error creando usuario')
       toast.success('Usuario creado')
       fetchUsers()
       setOpen(false)
-      setName(''); setEmailValue(''); setRestaurantQuery(''); setSelectedRestaurantId(null); setSelectedBranchId(null)
-    } catch (err:any) {
+      setName(''); setEmailValue(''); setRestaurantQuery(''); setSelectedRestaurantId(null); setSelectedBranchId(null); setPhone(''); setIsActive(true)
+    } catch (err: any) {
       toast.error(err.message || 'Error creando usuario')
     }
   }
@@ -216,6 +239,11 @@ export default function Users() {
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" value={emailValue} onChange={e => setEmailValue(e.target.value)} placeholder="usuario@ejemplo.com" />
                   {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input id="phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Teléfono" />
+                  {errors.phone && <p className="text-red-600 text-sm">{errors.phone}</p>}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="role">Rol</Label>
@@ -303,6 +331,10 @@ export default function Users() {
                   </div>
                   </>
                 )}
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="isActive">Estado</Label>
+                  <Switch id="isActive" checked={isActive} onCheckedChange={setIsActive} />
+                </div>
               </div>
               <SheetFooter>
                 <Button variant="default" onClick={handleSave}>Guardar</Button>

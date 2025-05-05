@@ -8,6 +8,7 @@ const supabaseAdmin = createClient(
 );
 
 export default async function handler(req, res) {
+  console.log('inviteUser called with body:', req.body);
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -16,21 +17,49 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'full_name, email, role, phone, is_active are required' });
   }
   try {
-    // Invite user with all metadata
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+    // Invite user by email, passing user metadata
+    const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {
-        user_metadata: { full_name, role, phone, is_active },
-        data: { password: null } // use invite link
+        data: { full_name, role, phone, is_active },
+        // Optionally: redirectTo: process.env.VITE_API_URL + '/auth/callback'
       }
     );
-    if (error) return res.status(400).json({ error: error.message });
-    const userId = data.user.id;
+    console.log('inviteUserByEmail response:', { data, inviteError });
+    if (inviteError) {
+      console.error('inviteUser backend error:', inviteError);
+      return res.status(400).json({ error: inviteError.message, details: inviteError });
+    }
+    // Fetch user to get ID since inviteUserByEmail returns null user
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ query: email });
+    console.log('listUsers response:', { listData, listError });
+    if (listError || !listData.users.length) {
+      console.error('listUsers error or no users:', listError);
+      return res.status(500).json({ error: 'Could not fetch invited user ID', details: listError });
+    }
+    const userId = listData.users[0].id;
+    // Upsert profile manually (trigger disabled)
+    const { data: profileData, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert({ id: userId, full_name, email, role, phone, is_active, restaurant_id }, { onConflict: 'id' });
+    console.log('profile upsert response:', { profileData, profileError });
+    if (profileError) {
+      console.error('profile upsert error:', profileError);
+      return res.status(500).json({ error: profileError.message, details: profileError });
+    }
     if (role !== 'Super Admin') {
-      await supabaseAdmin.from('branch_users').insert({ branch_id, user_id: userId });
+      const { data: branchData, error: branchError } = await supabaseAdmin
+        .from('branch_users')
+        .insert({ branch_id, user_id: userId });
+      console.log('branch_users insert response:', { branchData, branchError });
+      if (branchError) {
+        console.error('branch_users insert error:', branchError);
+        return res.status(500).json({ error: branchError.message, details: branchError });
+      }
     }
     return res.status(200).json({ data });
   } catch (err) {
+    console.error('inviteUser exception:', err);
     console.error('inviteUser error', err);
     return res.status(500).json({ error: err.message });
   }

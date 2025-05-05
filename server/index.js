@@ -11,5 +11,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log('[API]', req.method, req.originalUrl);
+  next();
+});
+
+// Define API routes
 app.post('/api/inviteUser', inviteUserHandler);
 app.listen(3000, () => console.log('API server listening on http://localhost:3000'));
