@@ -47,7 +47,8 @@ export default async function handler(req, res) {
       console.error('profile upsert error:', profileError);
       return res.status(500).json({ error: profileError.message, details: profileError });
     }
-    if (role !== 'Super Admin') {
+    // Skip branch assignment for super_admin role
+    if (role !== 'super_admin') {
       const { data: branchData, error: branchError } = await supabaseAdmin
         .from('branch_users')
         .insert({ branch_id, user_id: userId });
