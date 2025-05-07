@@ -116,6 +116,12 @@
   --foreground-rgb: 250 250 250;
 }
 
+/* ===== DEBUG: Desactiva pointer events en el overlay del Sheet ===== */
+[data-slot="sheet-overlay"] {
+  pointer-events: none !important;
+}
+/* =============================================================== */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

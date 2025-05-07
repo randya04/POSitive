@@ -96,25 +96,55 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ open, onClose, f
     if (Object.keys(newErrors).length) return
     setIsSaving(true)
     try {
-      // Aquí deberías hacer la llamada real a la API para crear usuario
-      // await createUser({ ... })
-      await new Promise(res => setTimeout(res, 1000)) // Simulación
-      toast.success('Usuario creado exitosamente')
-      fetchUsers()
-      onClose()
-      setName('')
-      setEmail('')
-      setPhone('')
-      setRole('Host')
-      setIsActive(true)
-      setSelectedRestaurantId(null)
-      setSelectedBranchId(null)
-      setRestaurantQuery('')
-      setErrors({})
-    } catch (error) {
-      toast.error((error as Error).message || 'Error al crear usuario')
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const roleMap = {
+        'Super Admin': 'super_admin',
+        'Admin': 'restaurant_admin',
+        'Host': 'host',
+      };
+      // Construir payload solo con valores definidos
+      const payload: Record<string, any> = {};
+      if (name) payload.full_name = name;
+      if (email) payload.email = email;
+      if (role) payload.role = roleMap[role] || role;
+      if (phone) payload.phone = phone;
+      payload.is_active = isActive;
+      if (selectedRestaurantId) payload.restaurant_id = selectedRestaurantId;
+      if (selectedBranchId) payload.branch_id = selectedBranchId;
+
+      const response = await fetch(`${API_URL}/api/inviteUser`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const responseJson = await response.json();
+      if (!response.ok) throw new Error(responseJson.error || 'Error creando usuario');
+      toast.success('Usuario creado exitosamente');
+      fetchUsers();
+      onClose();
+      setName('');
+      setEmail('');
+      setPhone('');
+      setRole('Host');
+      setIsActive(true);
+      setSelectedRestaurantId(null);
+      setSelectedBranchId(null);
+      setRestaurantQuery('');
+      setErrors({});
+    } catch (error: any) {
+      let msg = '';
+      // Manejo especial para rate limit
+      const { getErrorMessage } = await import('@/lib/errorMessages');
+      if (error?.message?.includes('rate limit') || error?.code === 429 || error?.status === 429) {
+        msg = getErrorMessage('auth/over_email_send_rate_limit');
+      } else if (error?.code) {
+        msg = getErrorMessage(error.code);
+      } else {
+        msg = error.message || 'Error creando usuario';
+      }
+      toast.error(msg);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
