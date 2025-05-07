@@ -9,9 +9,18 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
+import { Maximize2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
-import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, createColumnHelper, type ColumnDef, type SortingState, type ColumnFiltersState, type OnChangeFn } from '@tanstack/react-table'
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  createColumnHelper,
+} from '@tanstack/react-table'
 
 interface User {
   id: string
@@ -24,20 +33,60 @@ interface User {
   is_active: boolean
 }
 
+interface Filters {
+  search?: string;
+  role?: string;
+  status?: string;
+  restaurant?: string;
+}
+
 interface UsersTableProps {
   users: User[];
   loading: boolean;
-  sorting: SortingState;
-  setSorting: OnChangeFn<SortingState>;
-  columnFilters: ColumnFiltersState;
-  setColumnFilters: OnChangeFn<ColumnFiltersState>;
+  filters?: Filters;
   onEdit: (user: User) => void;
   onToggleActive: (id: string, value: boolean) => void;
 }
 
 const columnHelper = createColumnHelper<User>()
 
-export const UsersTable: React.FC<UsersTableProps> = ({ users, loading, sorting, setSorting, columnFilters, setColumnFilters, onEdit, onToggleActive }) => {
+export const UsersTable: React.FC<UsersTableProps> = ({ users, loading, filters, onEdit, onToggleActive }) => {
+  // Filtrado interno
+  const filteredUsers = React.useMemo(() => {
+    if (!filters) return users;
+    return users.filter((user) => {
+      // Search
+      if (filters.search && filters.search.trim()) {
+        const s = filters.search.toLowerCase();
+        if (!(
+          user.full_name?.toLowerCase().includes(s) ||
+          user.email?.toLowerCase().includes(s) ||
+          user.role?.toLowerCase().includes(s) ||
+          (user.restaurant || '').toLowerCase().includes(s) ||
+          (user.phone || '').toLowerCase().includes(s)
+        )) {
+          return false;
+        }
+      }
+      // Role
+      if (filters.role && filters.role !== '' && user.role !== filters.role) {
+        return false;
+      }
+      // Status
+      if (filters.status === 'true' && !user.is_active) {
+        return false;
+      }
+      if (filters.status === 'false' && user.is_active) {
+        return false;
+      }
+      // Restaurant
+      if (filters.restaurant && filters.restaurant !== '' && user.restaurant !== filters.restaurant) {
+        return false;
+      }
+      return true;
+    });
+  }, [users, filters]);
+
   const columns: ColumnDef<User, any>[] = [
     columnHelper.display({
       id: 'details',
@@ -85,11 +134,8 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, loading, sorting,
   ]
 
   const table = useReactTable({
-    data: users,
+    data: filteredUsers,
     columns,
-    state: { sorting, columnFilters },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

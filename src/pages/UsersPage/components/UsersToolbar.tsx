@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
-import { ChevronsUpDown, Funnel } from 'lucide-react'
+import { ChevronsUpDown, Funnel, Check } from 'lucide-react'
 import {
   Command,
   CommandInput,
@@ -14,210 +14,226 @@ import {
 import React from 'react'
 
 interface UsersToolbarProps {
-  globalFilter: string;
-  setGlobalFilter: (value: string) => void;
-  roleComboboxValue: string;
-  setRoleComboboxValue: (value: string) => void;
-  roleComboboxOpen: boolean;
-  setRoleComboboxOpen: (open: boolean) => void;
-  roleComboboxQuery: string;
-  setRoleComboboxQuery: (q: string) => void;
-  roleOptions: { value: string; label: string }[];
-  statusComboboxValue: string;
-  setStatusComboboxValue: (value: string) => void;
-  statusComboboxOpen: boolean;
-  setStatusComboboxOpen: (open: boolean) => void;
-  statusComboboxQuery: string;
-  setStatusComboboxQuery: (q: string) => void;
-  statusOptions: { value: string; label: string }[];
-  restaurantComboboxValue: string;
-  setRestaurantComboboxValue: (value: string) => void;
-  restaurantComboboxOpen: boolean;
-  setRestaurantComboboxOpen: (open: boolean) => void;
-  restaurantComboboxQuery: string;
-  setRestaurantComboboxQuery: (q: string) => void;
-  restaurantOptions: { id: string; name: string }[];
-  clearAllFilters: () => void;
+  /**
+   * Callback único que se llama cuando cambia cualquier filtro. El padre debe usarlo para filtrar la tabla.
+   */
+  onFilterChange: (filters: {
+    search?: string;
+    role?: string;
+    status?: string;
+    restaurant?: string;
+  }) => void;
 }
 
-export const UsersToolbar: React.FC<UsersToolbarProps> = ({
-  globalFilter,
-  setGlobalFilter,
-  roleComboboxValue,
-  setRoleComboboxValue,
-  roleComboboxOpen,
-  setRoleComboboxOpen,
-  roleComboboxQuery,
-  setRoleComboboxQuery,
-  roleOptions,
-  statusComboboxValue,
-  setStatusComboboxValue,
-  statusComboboxOpen,
-  setStatusComboboxOpen,
-  statusComboboxQuery,
-  setStatusComboboxQuery,
-  statusOptions,
-  restaurantComboboxValue,
-  setRestaurantComboboxValue,
-  restaurantComboboxOpen,
-  setRestaurantComboboxOpen,
-  restaurantComboboxQuery,
-  setRestaurantComboboxQuery,
-  restaurantOptions,
-  clearAllFilters,
-}) => (
-  <div className="flex flex-row items-center w-full justify-between gap-4 overflow-x-auto">
-    <div className="flex flex-row flex-wrap items-center gap-2 flex-1 min-w-0">
-      <Input
-        placeholder="Buscar usuario, email, rol, restaurante o teléfono..."
-        value={globalFilter}
-        onChange={e => setGlobalFilter(e.target.value)}
-        className="max-w-sm"
-      />
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Funnel className="h-4 w-4" />
-            Filtrar
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={8} className="min-w-[220px] w-64 p-4">
-          <div className="grid gap-2">
-            <Label>Rol</Label>
-            <Popover open={roleComboboxOpen} onOpenChange={setRoleComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setRoleComboboxOpen(true)}
-                >
-                  {roleComboboxValue
-                    ? roleOptions.find((r) => r.value === roleComboboxValue)?.label
-                    : 'Seleccionar rol...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-full p-0 mt-1">
-                <Command className="w-full">
-                  <CommandInput
-                    value={roleComboboxQuery}
-                    onValueChange={setRoleComboboxQuery}
-                    placeholder="Buscar rol..."
-                  />
-                  <CommandList className="text-left">
-                    <CommandEmpty>No hay roles.</CommandEmpty>
-                    <CommandGroup heading="Roles">
-                      {roleOptions
-                        .filter((r) => r.label.toLowerCase().includes(roleComboboxQuery.toLowerCase()))
-                        .map((r) => (
+interface UsersToolbarProps {
+  onFilterChange: (filters: {
+    search?: string;
+    role?: string;
+    status?: string;
+    restaurant?: string;
+  }) => void;
+  onCreateUser: () => void;
+}
+
+export const UsersToolbar: React.FC<UsersToolbarProps> = ({ onFilterChange, onCreateUser }) => {
+  // Opciones locales (puedes ajustar según tu modelo de datos)
+  const roleOptions = [
+    { value: '', label: 'Todos los roles' },
+    { value: 'super_admin', label: 'Super Admin' },
+    { value: 'host', label: 'Host' },
+    { value: 'restaurant_admin', label: 'Admin' },
+  ];
+  const statusOptions = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'true', label: 'Activo' },
+    { value: 'false', label: 'Inactivo' },
+  ];
+  // Opcional: puedes poblar restaurantOptions por props o fetch
+  const restaurantOptions = [
+    { id: '', name: 'Todos los restaurantes' },
+    // ...
+  ];
+
+  // Estados internos para los filtros
+  const [search, setSearch] = React.useState('');
+  const [role, setRole] = React.useState('');
+  const [status, setStatus] = React.useState('');
+  const [restaurant, setRestaurant] = React.useState('');
+  // Estado de apertura para cada popover de filtro
+  const [roleOpen, setRoleOpen] = React.useState(false);
+  const [statusOpen, setStatusOpen] = React.useState(false);
+  const [restaurantOpen, setRestaurantOpen] = React.useState(false);
+
+  // Limpiar filtros
+  const clearAllFilters = () => {
+    setSearch('');
+    setRole('');
+    setStatus('');
+    setRestaurant('');
+  };
+
+  // Notificar cambios al padre
+  React.useEffect(() => {
+    onFilterChange({ search, role, status, restaurant });
+  }, [search, role, status, restaurant, onFilterChange]);
+
+  return (
+    <div className="flex flex-row items-center w-full gap-2">
+      <div className="flex flex-row items-center gap-2 flex-1 min-w-0">
+        <Input
+          placeholder="Buscar usuario, email, rol, restaurante o teléfono..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Funnel className="h-4 w-4" />
+              Filtrar
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" sideOffset={8} className="min-w-[220px] w-64 p-4">
+            <div className="grid gap-2">
+              <Label>Rol</Label>
+              <Popover open={roleOpen} onOpenChange={setRoleOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between"
+                  >
+                    {role ? roleOptions.find((r) => r.value === role)?.label : 'Seleccionar rol...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-full p-0 mt-1">
+                  <Command className="w-full">
+                    <CommandInput
+                      placeholder="Buscar rol..."
+                      onValueChange={() => {}}
+                    />
+                    <CommandList className="text-left">
+                      <CommandEmpty>No hay roles.</CommandEmpty>
+                      <CommandGroup heading="Roles">
+                        {roleOptions.map((r) => (
                           <CommandItem
                             key={r.value}
                             value={r.label}
                             onSelect={() => {
-                              setRoleComboboxValue(r.value)
-                              setRoleComboboxOpen(false)
+                              setRole(r.value);
+                              setRoleOpen(false);
                             }}
+                            className="relative"
                           >
                             {r.label}
+                            {role === r.value && (
+                              <span className="absolute right-2 flex items-center">
+                                <Check className="w-4 h-4 text-primary" />
+                              </span>
+                            )}
                           </CommandItem>
                         ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Label>Estado</Label>
-            <Popover open={statusComboboxOpen} onOpenChange={setStatusComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setStatusComboboxOpen(true)}
-                >
-                  {statusComboboxValue
-                    ? statusOptions.find((s) => s.value === statusComboboxValue)?.label
-                    : 'Seleccionar estado...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-full p-0 mt-1">
-                <Command className="w-full">
-                  <CommandInput
-                    value={statusComboboxQuery}
-                    onValueChange={setStatusComboboxQuery}
-                    placeholder="Buscar estado..."
-                  />
-                  <CommandList className="text-left">
-                    <CommandEmpty>No hay estados.</CommandEmpty>
-                    <CommandGroup heading="Estados">
-                      {statusOptions
-                        .filter((s) => s.label.toLowerCase().includes(statusComboboxQuery.toLowerCase()))
-                        .map((s) => (
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Label>Estado</Label>
+              <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between"
+                  >
+                    {status ? statusOptions.find((s) => s.value === status)?.label : 'Seleccionar estado...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-full p-0 mt-1">
+                  <Command className="w-full">
+                    <CommandInput
+                      placeholder="Buscar estado..."
+                      onValueChange={() => {}}
+                    />
+                    <CommandList className="text-left">
+                      <CommandEmpty>No hay estados.</CommandEmpty>
+                      <CommandGroup heading="Estados">
+                        {statusOptions.map((s) => (
                           <CommandItem
                             key={s.value}
                             value={s.label}
                             onSelect={() => {
-                              setStatusComboboxValue(s.value)
-                              setStatusComboboxOpen(false)
+                              setStatus(s.value);
+                              setStatusOpen(false);
                             }}
+                            className="relative"
                           >
                             {s.label}
+                            {status === s.value && (
+                              <span className="absolute right-2 flex items-center">
+                                <Check className="w-4 h-4 text-primary" />
+                              </span>
+                            )}
                           </CommandItem>
                         ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Label>Restaurante</Label>
-            <Popover open={restaurantComboboxOpen} onOpenChange={setRestaurantComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setRestaurantComboboxOpen(true)}
-                >
-                  {restaurantComboboxValue
-                    ? restaurantOptions.find((r) => r.id === restaurantComboboxValue)?.name
-                    : 'Seleccionar restaurante...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-full p-0 mt-1">
-                <Command className="w-full">
-                  <CommandInput
-                    value={restaurantComboboxQuery}
-                    onValueChange={setRestaurantComboboxQuery}
-                    placeholder="Buscar restaurante..."
-                  />
-                  <CommandList className="text-left">
-                    <CommandEmpty>No hay restaurantes.</CommandEmpty>
-                    <CommandGroup heading="Restaurantes">
-                      {restaurantOptions
-                        .filter((r) => r.name.toLowerCase().includes(restaurantComboboxQuery.toLowerCase()))
-                        .map((r) => (
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Label>Restaurante</Label>
+              <Popover open={restaurantOpen} onOpenChange={setRestaurantOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between"
+                  >
+                    {restaurant ? restaurantOptions.find((r) => r.id === restaurant)?.name : 'Seleccionar restaurante...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-full p-0 mt-1">
+                  <Command className="w-full">
+                    <CommandInput
+                      placeholder="Buscar restaurante..."
+                      onValueChange={() => {}}
+                    />
+                    <CommandList className="text-left">
+                      <CommandEmpty>No hay restaurantes.</CommandEmpty>
+                      <CommandGroup heading="Restaurantes">
+                        {restaurantOptions.map((r) => (
                           <CommandItem
                             key={r.id}
                             value={r.name}
                             onSelect={() => {
-                              setRestaurantComboboxValue(r.id)
-                              setRestaurantComboboxOpen(false)
+                              setRestaurant(r.id);
+                              setRestaurantOpen(false);
                             }}
+                            className="relative"
                           >
                             {r.name}
+                            {restaurant === r.id && (
+                              <span className="absolute right-2 flex items-center">
+                                <Check className="w-4 h-4 text-primary" />
+                              </span>
+                            )}
                           </CommandItem>
                         ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Button variant="ghost" className="w-full mt-2" onClick={clearAllFilters}>
-              Limpiar filtros
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Button variant="ghost" className="w-full mt-2" onClick={clearAllFilters}>
+                Limpiar filtros
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="ml-auto">
+        <Button variant="default" onClick={onCreateUser}>Crear usuario</Button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
