@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -117,6 +118,7 @@ export function LoginForm({
                   <Label htmlFor="remember">Recordar mis datos</Label>
                 </div>
                 <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login
                 </Button>
               </div>

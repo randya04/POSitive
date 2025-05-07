@@ -1,0 +1,19 @@
+.dialog-overlay-destructive {
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+}
+.dialog-icon-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(239,68,68,0.12); /* Tailwind red-500/10 */
+  border-radius: 0.75rem;
+  margin-right: 1rem;
+}
+.dialog-icon-warning svg {
+  color: #ef4444;
+  width: 1.5rem;
+  height: 1.5rem;
+}
