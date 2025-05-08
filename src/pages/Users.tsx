@@ -50,9 +50,9 @@ export default function Users() {
                 role: user.role,
                 restaurant: user.restaurant ?? null,
                 restaurant_id: user.restaurant_id ?? null,
-                
-                branch_id: user.branch_id ?? null,
-                branch: null,
+                branch_id: user.branch_id ?? null, // opcional
+                branch: user.branch ?? null,       // opcional
+                branch_ids: user.branch_ids ?? [], // ¡clave para el nuevo modelo!
                 is_active: user.is_active,
               });
               setEditOpen(true);

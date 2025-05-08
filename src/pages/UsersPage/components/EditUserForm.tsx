@@ -49,7 +49,12 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
   useEffect(() => {
     console.log('[EditUserForm] selectedRestaurantId cambió:', selectedRestaurantId);
   }, [selectedRestaurantId]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string|null>(user.branch_id ?? null)
+  // Inicializa con el primer branch_ids si existe, si no con branch_id legacy
+  const [selectedBranchId, setSelectedBranchId] = useState<string|null>(
+    (user.branch_ids && user.branch_ids.length > 0)
+      ? user.branch_ids[0]
+      : (user.branch_id ?? null)
+  )
   const [branchOptions, setBranchOptions] = useState<Branch[]>([])
   const [restaurantOptions, setRestaurantOptions] = useState<{id: string, name: string}[]>([])
   const [isBranchLoading, setIsBranchLoading] = useState(false)

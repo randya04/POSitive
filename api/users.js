@@ -28,6 +28,23 @@ export default async function handler(req, res) {
         restaurantMap = restaurants.reduce((acc, r) => ({ ...acc, [r.id]: r.name }), {});
       }
 
+      // Fetch branch_ids for each user (all branches assigned)
+      const profileIds = profiles.map(p => p.id);
+      let branchUsers = [];
+      if (profileIds.length) {
+        const { data: branchUsersData, error: branchUsersError } = await supabaseAdmin
+          .from('branch_users')
+          .select('user_id, branch_id')
+          .in('user_id', profileIds);
+        if (branchUsersError) throw branchUsersError;
+        branchUsers = branchUsersData || [];
+      }
+      // Map user_id to array of branch_ids
+      const userIdToBranchIds = {};
+      branchUsers.forEach(({ user_id, branch_id }) => {
+        if (!userIdToBranchIds[user_id]) userIdToBranchIds[user_id] = [];
+        userIdToBranchIds[user_id].push(branch_id);
+      });
       // Construct GET response
       const users = profiles.map(p => ({
         id: p.id,
@@ -38,6 +55,7 @@ export default async function handler(req, res) {
         is_active: p.is_active,
         restaurant: restaurantMap[p.restaurant_id] || null,
         restaurant_id: p.restaurant_id || null,
+        branch_ids: userIdToBranchIds[p.id] || [],
       }));
       return res.status(200).json({ data: users });
     } catch (err) {

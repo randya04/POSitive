@@ -6,8 +6,9 @@ export interface User {
   role: string;
   restaurant: string | null;
   restaurant_id: string | null;
-  branch: string | null;
-  branch_id: string | null;
+  branch?: string | null; // opcional para compatibilidad
+  branch_id?: string | null; // opcional para compatibilidad
+  branch_ids: string[]; // NUEVO: sucursales asociadas
   is_active: boolean;
 }
   
