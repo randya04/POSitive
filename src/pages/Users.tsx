@@ -112,15 +112,6 @@ export default function Users() {
             }}
             onToggleActive={handleToggleActive}
           />
-          {!loading && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted text-xs">
-              <span>
-                Mostrando {users.length} de {users.length}
-              </span>
-              <div className="space-x-2">
-              </div>
-            </div>
-          )}
         </section>
       </PageContainer>
       {editOpen && selectedUser ? (

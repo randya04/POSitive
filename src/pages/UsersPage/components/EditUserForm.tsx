@@ -9,6 +9,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { ChevronsUpDown, Trash2, Check } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import DeleteUserDialog from './DeleteUserDialog';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -35,6 +36,53 @@ interface EditUserFormProps {
 }
 
 export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetchUsers }) => {
+  // ...otros estados
+  // ...
+  // handleUpdate migrado de UsersReference
+  async function handleUpdate(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = 'Nombre es requerido';
+    if (!email.trim()) newErrors.email = 'Email es requerido';
+    if (!phone.trim()) newErrors.phone = 'Teléfono es requerido';
+    if (!role) newErrors.role = 'Rol es requerido';
+    if (role !== 'Super Admin') {
+      if (!selectedRestaurantId) newErrors.restaurant = 'Restaurante es requerido';
+      if (!selectedBranchId) newErrors.branch = 'Sucursal es requerida';
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length) return;
+    setLoading(true);
+    try {
+      const body: any = {
+        id: user.id,
+        full_name: name,
+        email,
+        phone,
+        role: role === 'Super Admin' ? 'super_admin' : role === 'Admin' ? 'restaurant_admin' : 'host',
+        is_active: isActive,
+      };
+      if (role !== 'Super Admin') {
+        body.restaurant_id = selectedRestaurantId;
+        body.branch_id = selectedBranchId;
+      }
+      const response = await fetch(`${API_URL}/api/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error actualizando usuario');
+      toast.success('Usuario actualizado');
+      fetchUsers();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || 'Error actualizando usuario');
+    } finally {
+      setLoading(false);
+    }
+  }
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [name, setName] = useState(user.full_name || '');
   const [email, setEmail] = useState(user.email || '');
   const [phone, setPhone] = useState(user.phone || '');
@@ -81,52 +129,9 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
       });
   }, [selectedRestaurantId]);
 
-  async function handleUpdate() {
-    const newErrors: Record<string, string> = {};
-    if (!name.trim()) newErrors.name = 'Nombre es requerido';
-    if (!email.trim()) newErrors.email = 'Email es requerido';
-    if (!phone.trim()) newErrors.phone = 'Teléfono es requerido';
-    if (!role) newErrors.role = 'Rol es requerido';
-    if (role !== 'Super Admin') {
-      if (!selectedRestaurantId) newErrors.restaurant = 'Restaurante es requerido';
-      if (!selectedBranchId) newErrors.branch = 'Sucursal es requerida';
-    }
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length) return;
-    setLoading(true);
-    try {
-      const roleMap: Record<string, string> = { 'Super Admin': 'super_admin', 'Admin': 'restaurant_admin', 'Host': 'host' };
-      const body: any = {
-        id: user.id,
-        full_name: name,
-        email,
-        phone,
-        role: roleMap[role],
-        is_active: isActive,
-      };
-      if (role !== 'Super Admin') {
-        body.restaurant_id = selectedRestaurantId;
-        body.branch_id = selectedBranchId;
-      }
-      const response = await fetch(`${API_URL}/api/users`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error actualizando usuario');
-      toast.success('Usuario actualizado');
-      fetchUsers();
-      onClose();
-    } catch (err: any) {
-      toast.error(err.message || 'Error actualizando usuario');
-    } finally {
-      setLoading(false);
-    }
-  }
+
 
   async function handleDeleteUser() {
-    if (!window.confirm('¿Estás seguro de eliminar este usuario?')) return;
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/users`, {
@@ -143,11 +148,16 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
       toast.error(err.message || 'Error eliminando usuario');
     } finally {
       setLoading(false);
+      setDeleteDialogOpen(false);
     }
   }
 
   return (
-    <div className="grid gap-4 p-4">
+    <form className="grid gap-4 p-4" onSubmit={handleUpdate}>
+      <div className="mb-2">
+        <h2 className="text-xl font-semibold leading-tight">Editar usuario</h2>
+        <p className="text-muted-foreground text-sm mt-1">Modifica los datos del usuario seleccionado. Recuerda guardar los cambios.</p>
+      </div>
       <div className="grid gap-2">
         <Label htmlFor="edit-name">Nombre completo</Label>
         <Input id="edit-name" value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" />
@@ -245,14 +255,22 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
         <Label htmlFor="edit-isActive">Estado</Label>
         <Switch id="edit-isActive" checked={role === 'Super Admin' ? true : isActive} disabled={role === 'Super Admin'} onCheckedChange={value => { if (role !== 'Super Admin') setIsActive(value) }} />
       </div>
-      <SheetFooter className="flex flex-row justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button variant="default" onClick={handleUpdate} disabled={loading}>{loading ? 'Guardando...' : 'Guardar cambios'}</Button>
+      <SheetFooter>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" type="button" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading}>
+            Guardar cambios
+          </Button>
+        </div>
       </SheetFooter>
       <div className="my-6 border-t" />
+      
       {/* Zona peligrosa */}
-      <div><h3 className="text-base font-semibold">Zona peligrosa</h3>
-      <p className="text-sm">Ten cuidado, estas acciones no se pueden deshacer.</p>
+      <div>
+        <h3 className="text-base font-semibold">Zona peligrosa</h3>
+        <p className="text-sm">Ten cuidado, estas acciones no se pueden deshacer.</p>
       </div>
       <div className="mt-2 border border-destructive rounded-lg bg-destructive/5">
         <div className="flex items-center justify-between p-4">
@@ -260,11 +278,18 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
             <div className="text-sm text-destructive">Eliminar usuario</div>
             <div className="text-xs text-destructive">El usuario ya no tendrá acceso al proyecto</div>
           </div>
-          <Button variant="destructive" size="sm" onClick={handleDeleteUser} disabled={loading}>
-            <Trash2 className="mr-2 w-5 h-5 text-white" /> Eliminar usuario
+          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} disabled={loading}>
+            <Trash2 className="mr-2 w-5 h-5 text-destructive" /> Eliminar usuario
           </Button>
         </div>
       </div>
-    </div>
+      <DeleteUserDialog
+        open={deleteDialogOpen}
+        userEmail={user.email}
+        onConfirm={handleDeleteUser}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
+    </form>
   );
+  
 };
