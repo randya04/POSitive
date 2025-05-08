@@ -1,15 +1,15 @@
 export interface User {
-    id: string;
-    full_name: string;
-    email: string;
-    phone: string;
-    role: string;
-    restaurant: string | null;
-    restaurant_id: string | null;
-    branch: string | null;
-    branch_id: string | null;
-    is_active: boolean;
-  }
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  restaurant: string | null;
+  restaurant_id: string | null;
+  branch: string | null;
+  branch_id: string | null;
+  is_active: boolean;
+}
   
   export interface Restaurant {
     id: string;

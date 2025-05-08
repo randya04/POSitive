@@ -23,23 +23,15 @@ import {
   SortingState,
 } from '@tanstack/react-table'
 
-interface User {
-  id: string
-  full_name: string
-  email: string
-  role: string
-  restaurant: string | null
-  branch_id?: string | null
-  phone: string
-  is_active: boolean
-}
-
 interface Filters {
   search?: string;
   role?: string;
   status?: string;
   restaurant?: string;
 }
+
+import { User } from '@/types/user';
+
 
 interface UsersTableProps {
   users: User[];

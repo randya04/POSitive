@@ -1,6 +1,4 @@
-import React from 'react'
-import { useState, useEffect } from 'react'
-import { toast } from '@/components/ui/toast'
+import { useState, useCallback } from 'react'
 import { Layout } from '@/components/Layout'
 import { PageContainer } from '@/components/PageContainer'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
@@ -8,96 +6,21 @@ import { UsersToolbar } from './UsersPage/components/UsersToolbar'
 import { CreateUserForm } from './UsersPage/components/CreateUserForm'
 import { UsersTable } from './UsersPage/components/UsersTable'
 import { EditUserForm } from './UsersPage/components/EditUserForm'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import { User } from '@/types/user';
+import { useUsers } from '@/hooks/useUsers';
+
 
 export default function Users() {
   console.log("=== INICIO RENDER Users ===");
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState<boolean>(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [toolbarFilters, setToolbarFilters] = useState({ search: '', role: '', status: '', restaurant: '' });
 
-  // Log de depuración, después de los hooks
-  // Log de depuración, después de los hooks
-  console.log("Users render, users.length:", users.length, "loading:", loading);
+  // Nuevo hook centralizado
+  const { users, loading, fetchUsers, handleToggleActive } = useUsers();
 
-  useEffect(() => {
-    console.log("useEffect ejecutado");
-    fetchUsers()
-  }, [])
-
-  async function fetchUsers() {
-    setLoading(true)
-    try {
-      const response = await fetch(`${API_URL}/api/users`)
-      let result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Error fetching users')
-      // Normaliza restaurant para que nunca sea undefined
-      let normalized = result;
-      if (Array.isArray(result)) {
-        normalized = result.map((u: any) => ({
-          id: u.id,
-          full_name: u.full_name,
-          email: u.email,
-          phone: u.phone ?? '',
-          role: u.role,
-          restaurant: u.restaurant ?? null,
-          restaurant_id: u.restaurant_id ?? null,
-          branch: u.branch ?? null,
-          branch_id: u.branch_id ?? null,
-          is_active: u.is_active,
-        }));
-      }
-
-      console.log("Fetched users:", normalized.data || normalized);
-      setUsers(normalized.data || normalized)
-
-    } catch (unknownError) {
-      const errorMessage = unknownError instanceof Error ? unknownError.message : String(unknownError)
-      console.error('fetchUsers error:', unknownError)
-      toast.error(errorMessage)
-    } finally {
-      console.log("fetchUsers FINISHED");
-      setLoading(false)
-    }
-  }
-
-  async function handleToggleActive(id: string, isActive: boolean) {
-    try {
-      const response = await fetch(`${API_URL}/api/users`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, is_active: isActive }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Error actualizando estado')
-      toast.success(`Usuario ${isActive ? 'activado' : 'desactivado'}`)
-      setUsers(prev => prev.map(u =>
-        u.id === id
-          ? {
-              ...u,
-              is_active: isActive,
-              restaurant_id: u.restaurant_id ?? null,
-              branch: u.branch ?? null,
-              branch_id: u.branch_id ?? null,
-              restaurant: u.restaurant ?? null,
-              phone: u.phone ?? '',
-            }
-          : u
-      ))
-    } catch (toggleError) {
-      console.error('Error toggling user active state:', toggleError)
-      const message = toggleError instanceof Error ? toggleError.message : String(toggleError)
-      toast.error(message)
-    }
-  }
-
-  const handleToolbarFilterChange = React.useCallback((filters: any) => {
+  const handleToolbarFilterChange = useCallback((filters: any) => {
     setToolbarFilters(filters);
   }, []);
 
@@ -117,7 +40,7 @@ export default function Users() {
             users={users}
             filters={toolbarFilters}
             loading={loading}
-            onEdit={(user) => {
+            onEdit={(user: User) => {
               // Ensure all required User fields are present
               setSelectedUser({
                 id: user.id,

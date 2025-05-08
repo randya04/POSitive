@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { ChevronsUpDown, Trash2, Check } from 'lucide-react';
+import DeleteUserDialog from './DeleteUserDialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 import { User } from '@/types/user';
@@ -155,8 +156,9 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
     }
   }
 
-  async function handleDeleteUser(id: string) {
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+async function handleDeleteUser(id: string) {
     setLoading(true)
     try {
       const response = await fetch(`${API_URL}/api/users`, {
@@ -177,8 +179,9 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
   }
 
   return (
-    <div className="grid gap-4 p-4">
-      <div className="grid gap-2">
+    <>
+      <div className="grid gap-4 p-4">
+        <div className="grid gap-2">
         <Label htmlFor="edit-name">Nombre completo</Label>
         <Input id="edit-name" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} placeholder="Nombre completo" />
         {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
@@ -295,12 +298,18 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
             <div className="text-sm text-destructive">Eliminar usuario</div>
             <div className="text-xs text-destructive">El usuario ya no tendrá acceso al proyecto</div>
           </div>
-          <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="mr-2 w-5 h-5 text-white" /> Eliminar usuario
           </Button>
         </div>
       </div>
     </div>
+    <DeleteUserDialog
+      open={deleteDialogOpen}
+      userEmail={user.email}
+      onConfirm={() => { setDeleteDialogOpen(false); handleDeleteUser(user.id); }}
+      onCancel={() => setDeleteDialogOpen(false)}
+    />
+    </>
   )
-  
 }
