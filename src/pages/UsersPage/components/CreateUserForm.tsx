@@ -46,16 +46,16 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ open, onClose, f
   const [branchError, setBranchError] = useState<any>(null)
 
   useEffect(() => {
-    // Simulación de fetch de restaurantes (reemplaza con tu API real)
     async function fetchRestaurants() {
-      // Aquí deberías hacer fetch real
-      setRestaurantOptions([])
-      setTimeout(() => {
-        setRestaurantOptions([
-          { id: '1', name: 'Restaurante 1' },
-          { id: '2', name: 'Restaurante 2' },
-        ])
-      }, 300)
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/restaurants`)
+        if (!res.ok) throw new Error('Error al obtener restaurantes')
+        const data = await res.json()
+        setRestaurantOptions(data)
+      } catch (err) {
+        setRestaurantOptions([])
+        // Opcional: muestra un toast o mensaje de error
+      }
     }
     fetchRestaurants()
   }, [])
@@ -64,14 +64,20 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ open, onClose, f
     if (selectedRestaurantId) {
       setIsBranchLoading(true)
       setBranchError(null)
-      // Simulación de fetch de sucursales (reemplaza con tu API real)
-      setTimeout(() => {
-        setBranchOptions([
-          { id: '1', name: 'Sucursal 1' },
-          { id: '2', name: 'Sucursal 2' },
-        ])
-        setIsBranchLoading(false)
-      }, 300)
+      async function fetchBranches() {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/branches?restaurant_id=${selectedRestaurantId}`)
+          if (!res.ok) throw new Error('Error al obtener sucursales')
+          const data = await res.json()
+          setBranchOptions(data)
+        } catch (err) {
+          setBranchOptions([])
+          setBranchError('No se pudieron obtener las sucursales')
+        } finally {
+          setIsBranchLoading(false)
+        }
+      }
+      fetchBranches()
     } else {
       setBranchOptions([])
       setSelectedBranchId(null)
