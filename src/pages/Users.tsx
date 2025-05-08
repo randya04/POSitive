@@ -11,16 +11,7 @@ import { EditUserForm } from './UsersPage/components/EditUserForm'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-interface User {
-  id: string
-  full_name: string 
-  email: string
-  phone: string
-  role: string
-  is_active: boolean
-  restaurant: string | null
-  branch_id?: string | null
-}
+import { User } from '@/types/user';
 
 export default function Users() {
   console.log("=== INICIO RENDER Users ===");
@@ -50,8 +41,16 @@ export default function Users() {
       let normalized = result;
       if (Array.isArray(result)) {
         normalized = result.map((u: any) => ({
-          ...u,
-          restaurant: u.restaurant === undefined ? null : u.restaurant
+          id: u.id,
+          full_name: u.full_name,
+          email: u.email,
+          phone: u.phone ?? '',
+          role: u.role,
+          restaurant: u.restaurant ?? null,
+          restaurant_id: u.restaurant_id ?? null,
+          branch: u.branch ?? null,
+          branch_id: u.branch_id ?? null,
+          is_active: u.is_active,
         }));
       }
 
@@ -78,7 +77,19 @@ export default function Users() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Error actualizando estado')
       toast.success(`Usuario ${isActive ? 'activado' : 'desactivado'}`)
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, is_active: isActive } : u))
+      setUsers(prev => prev.map(u =>
+        u.id === id
+          ? {
+              ...u,
+              is_active: isActive,
+              restaurant_id: u.restaurant_id ?? null,
+              branch: u.branch ?? null,
+              branch_id: u.branch_id ?? null,
+              restaurant: u.restaurant ?? null,
+              phone: u.phone ?? '',
+            }
+          : u
+      ))
     } catch (toggleError) {
       console.error('Error toggling user active state:', toggleError)
       const message = toggleError instanceof Error ? toggleError.message : String(toggleError)
@@ -107,7 +118,20 @@ export default function Users() {
             filters={toolbarFilters}
             loading={loading}
             onEdit={(user) => {
-              setSelectedUser(user);
+              // Ensure all required User fields are present
+              setSelectedUser({
+                id: user.id,
+                full_name: user.full_name,
+                email: user.email,
+                phone: user.phone ?? '',
+                role: user.role,
+                restaurant: user.restaurant ?? null,
+                restaurant_id: user.restaurant_id ?? null,
+                
+                branch_id: user.branch_id ?? null,
+                branch: null,
+                is_active: user.is_active,
+              });
               setEditOpen(true);
             }}
             onToggleActive={handleToggleActive}

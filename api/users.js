@@ -37,6 +37,7 @@ export default async function handler(req, res) {
         phone: p.phone,
         is_active: p.is_active,
         restaurant: restaurantMap[p.restaurant_id] || null,
+        restaurant_id: p.restaurant_id || null,
       }));
       return res.status(200).json({ data: users });
     } catch (err) {
