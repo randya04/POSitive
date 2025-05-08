@@ -81,20 +81,21 @@ export const UsersToolbar: React.FC<UsersToolbarProps> = ({ onFilterChange, onCr
     <div className="flex flex-row items-center w-full gap-2">
       <div className="flex flex-row items-center gap-2 flex-1 min-w-0">
         <Input
-          placeholder="Buscar usuario, email, rol, restaurante o teléfono..."
+          placeholder="Buscar todo..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="max-w-xs"
         />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Funnel className="h-4 w-4" />
-              Filtrar
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" sideOffset={8} className="min-w-[220px] w-64 p-4">
-            <div className="grid gap-2">
+        <div className="flex flex-row items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Funnel className="h-4 w-4" />
+                Filtrar
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" sideOffset={8} className="min-w-[220px] w-64 p-4">
+              <div className="grid gap-2">
               <Label>Rol</Label>
               <Popover open={roleOpen} onOpenChange={setRoleOpen}>
                 <PopoverTrigger asChild>
@@ -230,6 +231,29 @@ export const UsersToolbar: React.FC<UsersToolbarProps> = ({ onFilterChange, onCr
             </div>
           </PopoverContent>
         </Popover>
+      </div>
+      {(role || status || restaurant) && (
+        <div className="flex flex-row flex-wrap gap-2">
+          {role && (
+            <span className="inline-flex items-center rounded-full bg-muted/80 px-2 py-0.5 text-xs font-normal text-muted-foreground border border-muted-foreground/10">
+              Rol: {roleOptions.find((r) => r.value === role)?.label}
+              <button onClick={() => setRole('')} className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none text-sm">×</button>
+            </span>
+          )}
+          {status && (
+            <span className="inline-flex items-center rounded-full bg-muted/80 px-2 py-0.5 text-xs font-normal text-muted-foreground border border-muted-foreground/10">
+              Estado: {statusOptions.find((s) => s.value === status)?.label}
+              <button onClick={() => setStatus('')} className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none text-sm">×</button>
+            </span>
+          )}
+          {restaurant && (
+            <span className="inline-flex items-center rounded-full bg-muted/80 px-2 py-0.5 text-xs font-normal text-muted-foreground border border-muted-foreground/10">
+              Restaurante: {restaurantOptions.find((r) => r.id === restaurant)?.name}
+              <button onClick={() => setRestaurant('')} className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none text-sm">×</button>
+            </span>
+          )}
+        </div>
+      )}
       </div>
       <div className="ml-auto">
         <Button variant="default" onClick={onCreateUser}>Crear usuario</Button>

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Maximize2, ArrowDownUp, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Maximize2, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import {
   ColumnDef,
@@ -109,7 +109,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, loading, filters,
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') column.toggleSorting(column.getIsSorted() === 'asc') }}
         >
           <span className="font-semibold">Nombre</span>
-          <ArrowDownUp
+          <ChevronsUpDown
             className={
               `ml-1 h-4 w-4 transition-opacity ${column.getIsSorted() ? 'text-primary opacity-100' : 'opacity-40'}`
             }
@@ -131,7 +131,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, loading, filters,
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') column.toggleSorting(column.getIsSorted() === 'asc') }}
         >
           <span className="font-semibold">Rol</span>
-          <ArrowDownUp
+          <ChevronsUpDown
             className={
               `ml-1 h-4 w-4 transition-opacity ${column.getIsSorted() ? 'text-primary opacity-100' : 'opacity-40'}`
             }

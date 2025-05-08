@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { useRestaurantSearch } from '@/hooks/useRestaurantSearch'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 type RoleOption = { label: string; value: string }
 
@@ -33,7 +34,8 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
 }) => {
   const [restaurantQuery] = useState('');
 
-  const { data: searchResults } = useRestaurantSearch(restaurantQuery)
+  const supabase = useSupabaseClient()
+  const { data: searchResults } = useRestaurantSearch(supabase, restaurantQuery)
 
   return (
     <div className="flex flex-wrap gap-2 mb-4">

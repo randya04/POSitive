@@ -105,11 +105,6 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, fetch
         setIsBranchLoading(false);
         setBranchError(null);
       })
-      .catch(error => {
-        setIsBranchLoading(false);
-        setBranchOptions([]);
-        setBranchError({ message: 'Error de red al cargar sucursales.' });
-      });
   }, [selectedRestaurantId]);
 
   async function handleUpdate() {
